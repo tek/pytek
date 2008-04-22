@@ -9,8 +9,8 @@ from tek.debug import debug
 from tek.errors import *
 
 def boolify(value):
-	if isinstance(value, str) and len(value) > 3 and (value[1:] == "rue" or value[1:] == "alse"):
-		return value[1:] == "rue"
+	if isinstance(value, str) and len(value) > 3 and (value[1:] == 'rue' or value[1:] == 'alse'):
+		return value[1:] == 'rue'
 	else: return value
 
 class TypedConfigObject(object):
@@ -40,8 +40,6 @@ class TypedConfigObject(object):
 			else: args = args[0] 
 		if isinstance(args, self.value_type): self.value = args
 		else:
-			print args
-			print self.value_type
 			self.value = self.value_type(args)
 
 	def __str__(self):
