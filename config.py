@@ -5,8 +5,8 @@ from os import environ, path
 from ConfigParser import SafeConfigParser, NoSectionError
 from optparse import Values
 
-from mootils.common.debug import debug
-from mootils.common.errors import *
+from tek.debug import debug
+from tek.errors import *
 
 def boolify(value):
 	if isinstance(value, str) and len(value) > 3 and (value[1:] == "rue" or value[1:] == "alse"):
