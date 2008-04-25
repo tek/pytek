@@ -168,7 +168,7 @@ class Configurable(object):
 		try:
 			items = dict(self.config_parser.items(section))
 			self.__config.set_file_config(section, items)
-		except NoSectionError, e: debug(e)
+		except NoSectionError, e: debug('ConfigParser: ' + str(e))
 
 	def config(self, key):
 		if not self.__config.has_key(key):raise NoSuchOptionError(key)
