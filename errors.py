@@ -6,6 +6,12 @@ class MooException(Exception):
 class NotImplementedError(MooException):
 	pass
 
+class NoOverloadError(NotImplementedError):
+	def __init__(self, function, obj):
+		error_msg = '%s cannot handle parameters of type %s!' \
+					% (function, type(obj))
+		super(NoOverloadError, self).__init__(error_msg)
+
 class ConfigError(MooException): pass
 
 class NoSuchOptionError(ConfigError):
