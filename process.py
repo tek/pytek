@@ -2,13 +2,14 @@
 
 from subprocess import Popen, PIPE
 
-def process(args):
+def process(args, wait=True):
 	""" Run process 'args' and return the Popen instance after it's
 		finished.
 
 	"""
 	proc = Popen(args, stdout=PIPE, stderr=PIPE)
-	proc.wait()
+	if wait:
+		proc.wait()
 	return proc
 	
 def process_output(args):
