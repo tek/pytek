@@ -2,14 +2,19 @@
 
 from subprocess import Popen, PIPE
 
-def process_output(args):
-	""" runs process 'args' and returns a list containing the
-	    output lines without trailing newline characters """
+def process(args):
+	""" Run process 'args' and return the Popen instance after it's
+		finished.
+
+	"""
 	proc = Popen(args, stdout=PIPE, stderr=PIPE)
 	proc.wait()
-	ret = proc.stdout.readlines()
-	for i, line in enumerate(ret): ret[i] = line.rstrip('\n')
-	return ret
+	return proc
+	
+def process_output(args):
+	""" runs process 'args' and returns a list containing the
+	    stdoutput lines without trailing newline characters """
+	return [line.rstrip('\n') for line in process(args).stdout.readlines()]
 
 if __name__ == "__main__":
 	import sys

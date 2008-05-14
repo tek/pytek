@@ -3,9 +3,6 @@ from __future__ import with_statement
 class MooException(Exception):
 	pass
 
-class NotImplementedError(MooException):
-	pass
-
 class NoOverloadError(NotImplementedError):
 	def __init__(self, function, obj):
 		error_msg = '%s cannot handle parameters of type %s!' \
