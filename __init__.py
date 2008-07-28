@@ -2,6 +2,6 @@
 
 from __future__ import absolute_import
 from .process import process, process_output
-from .config import Configurable
+from .config import Configurable, CLIConfig
 from .debug import debug
 from .errors import MooException
