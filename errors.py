@@ -9,7 +9,8 @@ class NoOverloadError(NotImplementedError):
                     % (function, type(obj))
         super(NoOverloadError, self).__init__(error_msg)
 
-class ConfigError(MooException): pass
+class ConfigError(MooException): 
+    pass
 
 class NoSuchOptionError(ConfigError):
     def __init__(self, key):
@@ -33,5 +34,10 @@ class MultipleSectionsWithKeyError(ConfigError):
 
 class DuplicateFileSectionError(ConfigError):
     def __init__(self, section):
-        super(DuplicateFileSectionError, self).__init__('Config file section \'%s\' already added!' % section)
+        super(DuplicateFileSectionError, self).__init__(
+                'Config file section \'%s\' already added!' % section)
 
+class DuplicateDefaultSectionError(ConfigError):
+    def __init__(self, section):
+        super(DuplicateDefaultSectionError, self).__init__(
+                'Config defaults section \'%s\' already added!' % section)
