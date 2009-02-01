@@ -41,3 +41,14 @@ class DuplicateDefaultSectionError(ConfigError):
     def __init__(self, section):
         super(DuplicateDefaultSectionError, self).__init__(
                 'Config defaults section \'%s\' already added!' % section)
+
+class ConfigClientNotYetConnectedError(ConfigError):
+    """ This error is thrown if a ConfigClient instance tries to get a
+    config value before the corresponding Configurable hadn't yet been
+    initialized and connected.
+    
+    """
+    def __init__(self, name, key):
+        error_string = 'Config Client \'%s\' wasn\'t connected when accessing config option \'%s\'!' % (name, key)
+        super(ConfigClientNotYetConnectedError, self).__init__(error_string)
+
