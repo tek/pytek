@@ -121,9 +121,9 @@ class ConfigDict(dict):
 class Configuration(object):
     """ Container for several dictionaries representing configuration
     options from various sources:
-    The defaults, to be set from a Configurable instance
-    The file config, read from all files given in the Configurable
-    The command line options, passed by a CLIConfig object through
+    - The defaults, to be set from a Configurable instance
+    - The file config, read from all files given in the Configurable
+    - The command line options, passed by a CLIConfig object through
     the static Configurations proxy class.
     It can be used from Configurable and ConfigClient derivatives to
     obtain the value to a config key, where the precedence is
