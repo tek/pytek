@@ -132,16 +132,16 @@ class Configuration(object):
     Configurable, which correspond to the section names from the files.
     
     """
-    def __init__(self, **defaults):
+    def __init__(self, defaults):
         """ Initialize the dicts used to store the config and the list
         of section names that are added for defaults.
         
         """
-        self.sections         = list()
-        self.config_defaults  = dict()
+        self.config_defaults  = ConfigDict()
         self.config_from_file = dict()
         self.config_from_cli  = ConfigDict()
         self.config           = ConfigDict()
+        self.set_defaults(defaults)
 
     def __getitem__(self, key):
         """ Emulate read-only container behaviour.
@@ -162,14 +162,13 @@ class Configuration(object):
 
     @property
     def info(self):
-        """ Return the contents of all sources and sections.
+        """ Return the contents of all sources.
         
         """
-        string = 'Defaults: %s\nCLI: %s\nFiles:' % (str(self.config_defaults),
-                                                    str(self.config_from_cli))
-        for section, config in self.config_from_file.iteritems():
-            string += '\nSection \'%s\': %s' % (section, str(config))
-        return string
+        s = 'Defaults: %s\nCLI: %s\nFiles: %s' % (str(self.config_defaults),
+                                                  str(self.config_from_cli),
+                                                  str(self.config_from_file))
+        return s
 
     def __rebuild_config(self):
         """ Collect the config options from the defaults, the file
@@ -181,58 +180,41 @@ class Configuration(object):
         
         """
         self.config = ConfigDict()
+        self.config.update(self.config_defaults)
+        self.config.update(self.config_from_file)
+        self.config.update(self.config_from_cli)
 
-        # defaults and file config
-        for section in self.sections:
-            self.config.update(self.config_defaults[section])
-            if self.config_from_file.has_key(section):
-                self.config.update(self.config_from_file[section])
-
-        # cli overrides
-        valid_pairs = [[key, value] for 
-                       key, value in self.config_from_cli.iteritems() 
-                       if any(conf.has_key(key) for 
-                       conf in self.config_defaults.values())]
-        self.config.update(valid_pairs)
-
-    def set_defaults(self, section, new_defaults):
+    def set_defaults(self, new_defaults):
         """ Add a new unique section with default values to the list of
         default options.
 
         """
-        if self.config_from_file.has_key(section): 
-            raise DuplicateDefaultSectionError(section)
-        self.sections.append(section)
-        self.config_defaults[section] = ConfigDict()
-        self.config_defaults[section] = new_defaults
+        self.config_defaults.update(new_defaults)
         self.__rebuild_config()
 
     def set_cli_config(self, values):
         """ Set the config values read from command line invocation.
 
-            @param values: Obtained from an instance of OptionParser. Its __dict__ contains all of the
-                           possible command line options. If an option hasn't been supplied, it is
-                           None, and thus not considered here.
+            @param values: Obtained from an instance of OptionParser.
+            Its __dict__ contains all of the possible command line 
+            options. If an option hasn't been supplied, it is None, and
+            thus not considered here.
             @type values: optparse.Values
 
         """
-        self.config_from_cli.update([key, value] for key, value in values.__dict__.iteritems() if value is not None)
+        self.config_from_cli.update([key, value] for key, value in 
+                                    values.__dict__.iteritems() 
+                                    if value is not None and
+                                    self.config_defaults.has_key(key))
         self.__rebuild_config()
 
-    def set_file_config(self, section, file_config):
-        """ Add the values of a given section from the files uniquely
-        as a ConfigDict object and rebuild the main config.
+    def set_file_config(self, file_config):
+        """ Add the values obtained from the files as a ConfigDict
+        object and rebuild the main config.
         
         """
-        if self.config_from_file.has_key(section): 
-            raise DuplicateFileSectionError(section)
-        dups = [key for key in file_config.iterkeys() 
-                if any(config.has_key(key) for config 
-                       in self.config_from_file.itervalues())]
-        if len(dups) > 0:
-            print "Warning: duplicate keys in file config: %s" % ", ".join(dups)
-        self.config_from_file[section] = ConfigDict()
-        self.config_from_file[section].update(file_config)
+        self.config_from_file = ConfigDict()
+        self.config_from_file.update(file_config)
         self.__rebuild_config()
 
     def config_from_section(self, section, key):
@@ -255,85 +237,6 @@ class Configuration(object):
         
         """
         return name in self.sections
-
-class Configurable(object):
-    """ Class that represents a part of the program with configurable
-    options.
-    config_files should be set through add_config_files if files should
-    be read into the config.
-    A Configurable is identified by a number of names, so that a
-    ConfigClient can access it through the Configurations singleton.
-    
-    """
-    config_files = []
-
-    def __init__(self, *names):
-        """ Set the names that should identify this part of the config,
-        init the file parser and Configuration instance, read out the
-        files and register with the Configurations proxy.
-        
-        """
-        self.names = names
-        self.config_parser = SafeConfigParser()
-        self.__config = Configuration()
-        self.config_parser.read(self.config_files)
-        Configurations.register_config(self)
-
-    @classmethod
-    def add_config_files(cls, *files):
-        """ Add a file path to the config file list.
-        
-        """
-        cls.config_files.extend(files)
-
-    def add_config_section(self, section, **defaults):
-        """ Add a section with optional default values to the config.
-        If section is present in the file config, read it and pass it
-        to the config.
-        
-        """
-        self.__config.set_defaults(section, defaults)
-        try:
-            items = dict(self.config_parser.items(section))
-            self.__config.set_file_config(section, items)
-        except NoSectionError, e: 
-            debug('ConfigParser: ' + str(e))
-
-    def config(self, key, default=None):
-        """ Obtain the value of a config option.
-        
-        """
-        if not self.__config.has_key(key):
-            if default is not None:
-                return default
-            else:
-                raise NoSuchOptionError(key)
-        else: return self.__config[key]
-
-    def config_has_section(self, name):
-        return self.__config.has_section(name)
-
-    def config_from_section(self, section, key):
-        return self.__config.config_from_section(section, key)
-
-    def set_cli_config(self, items):
-        """ Pass the values of the command line options to the config.
-        
-        """
-        self.__config.set_cli_config(items)
-
-    def print_all(self):
-        print self.__config.info
-
-class ConfigClientNotYetConnectedError(MooException):
-    """ This error is thrown if a ConfigClient instance tries to get a
-    config value before the corresponding Configurable hadn't yet been
-    initialized and connected.
-    
-    """
-    def __init__(self, name, key):
-        error_string = 'Config Client \'%s\' wasn\'t connected when accessing config option \'%s\'!' % (name, key)
-        super(ConfigClientNotYetConnectedError, self).__init__(error_string)
 
 class ConfigClientBase(object):
     """ A class which allows remote access to a Configuration.
@@ -358,7 +261,7 @@ class ConfigClientBase(object):
     def connect(self, config):
         """ Reference the Configuration instance as the config to be
         used by the client. Called from Configurations once the 
-        Configurable is ready.
+        Configuration is ready.
         Mark as connected, so that the config isn't switched.
         
         """
@@ -382,28 +285,21 @@ class ConfigClient(ConfigClientBase):
         """
         if not self.connected: 
             raise ConfigClientNotYetConnectedError(self.name, key)
-        return self._config.config(key)
+        return self._config[key]
 
     def __call__(self, key):
         return self.config(key)
 
-class CLIConfig(ConfigClientBase):
+    def print_all(self):
+        print self._config.info
+
+class CLIConfig(object):
     """ Proxy for setting the command line arguments as config values.
     
     """
-    def __init__(self, name, values = None):
-        self.init_cli_config(name, values)
-    
-    def init_cli_config(self, name, values = None):
-        """ Connect to the config called name and optionally send the
-        cli values if already present.
-        
-        """
-        self.config_transferred = False
-        self.config_set = False
-        super(CLIConfig, self)._init(name)
+    def __init__(self, values = None):
         self.set_cli_config(values)
-
+    
     def set_cli_config(self, values):
         """ If present, set the values attribute and transfer them.
         
@@ -411,24 +307,29 @@ class CLIConfig(ConfigClientBase):
         if values is not None:
             assert(isinstance(values, Values))
             self.values = values
-            self.config_set = True
-            self.__transfer_config()
-        return self
+            Configurations.set_cli_config(self.values)
 
-    def connect(self, config):
-        """ Call super and try to send the config.
-        
-        """
-        super(CLIConfig, self).connect(config)
-        self.__transfer_config()
+class ConfigurationFactory(object):
+    """ Construct Configuration objects out of a section of the given
+    config files.
     
-    def __transfer_config(self):
-        """ Pass the cli values to the Configurations singleton, if
-        the Configurable has already completed setup.
-        
-        """
-        if self.connected and self.config_set:
-            self._config.set_cli_config(self.values)
+    """
+    def __init__(self, files):
+        self.files = files
+        self.read_config()
+
+    def read_config(self):
+        self.config_parser = SafeConfigParser()
+        self.config_parser.read(self.files)
+
+    def create(self, section, defaults):
+        config = Configuration(defaults)
+        try:
+            file_config = dict(self.config_parser.items(section))
+            config.set_file_config(file_config)
+        except NoSectionError, e: 
+            debug('ConfigParser: ' + str(e))
+        return config
 
 class Configurations(object):
     """ Program-wide register of Configurable instances.
@@ -436,42 +337,78 @@ class Configurations(object):
     has registered.
 
     """
-    # A dict of Configurable instances by their name
+
+    # A dict of configuration factories by an alias name
+    factories = { }
+
+    # A dict of Configuration instances by their section name
     configs = { }
+
+    cli_config = None
 
     # A dict of lists of client instances grouped by the name of the
     # target Configurable's name
     pending_clients = { }
 
     @classmethod
-    def register_config(cls, config):
-        """ Add a Configurable instance to the configs dict under each 
-        of its names and connect waiting client instances.
+    def register_files(cls, alias, *files):
+        if not cls.factories.has_key(alias):
+            cls.factories[alias] = ConfigurationFactory(files)
+
+    @classmethod
+    def register_config(cls, file_alias, section, **defaults):
+        """ Add a Configuration instance to the configs dict that
+        contains the specified section of the files denoted by the
+        specified alias and connect waiting client instances.
 
         """
-        assert(isinstance(config, Configurable))
-        for name in config.names:
-            cls.configs[name] = config
-            cls.notify_clients(name)
+        if not cls.configs.has_key(section):
+            config = cls.factories[file_alias].create(section, defaults)
+
+            if cls.cli_config:
+                config.set_cli_config(cls.cli_config)
+
+            cls.configs[section] = config
+
+            debug('Configuration initialized with section \'%s\'' % section)
+
+            cls.notify_clients(section)
+
+    @classmethod
+    def set_cli_config(cls, values):
+        cls.cli_config = values
+        for config in cls.configs.values():
+            config.set_cli_config(values)
+        cls.notify_all_clients()
 
     @classmethod
     def register_client(cls, client):
-        """ Connect a client instance to the according Configurable 
+        """ Connect a client instance to the according Configuration
         instance, buffering the request if neccessary.
 
         """
-        try: client.connect(cls.configs[client.name])
+        try: 
+            client.connect(cls.configs[client.name])
         except KeyError:
             if not cls.pending_clients.has_key(client.name): cls.pending_clients[client.name] = [ ]
             cls.pending_clients[client.name].append(client)
 
     @classmethod
+    def notify_all_clients(cls):
+        for name in cls.pending_clients.keys():
+            cls.notify_clients(name)
+
+    @classmethod
     def notify_clients(cls, name):
-        """ Connects clients to Configurable 'name' that have been
+        """ Connects clients to Configuration 'name' that have been
         registered before their target and clear the client dict item.
 
         """
-        if cls.pending_clients.has_key(name):
-            for client in cls.pending_clients[name]: 
-                client.connect(cls.configs[name])
-            del cls.pending_clients[name]
+        if cls.configs.has_key(name):
+            if cls.pending_clients.has_key(name):
+                for client in cls.pending_clients[name]: 
+                    client.connect(cls.configs[name])
+                del cls.pending_clients[name]
+        else:
+            debug('Configurations.notify clients called for Configuration ' +
+                  '\'%s\' which hasn\'t been added yet' % name)
