@@ -16,3 +16,6 @@ class Silencer(object):
 
     def write(self, data):
         pass
+
+def repr_params(*params):
+    return '(' + ', '.join(map(repr, params)) + ')'
