@@ -1,4 +1,5 @@
 import sys
+from itertools import izip
 
 def zip_fill(default, *seqs):
     filler = lambda *seq: [el if el is not None else default for el in seq]
@@ -19,3 +20,9 @@ class Silencer(object):
 
 def repr_params(*params):
     return '(' + ', '.join(map(repr, params)) + ')'
+
+def str_list(l, j):
+    return j.join(map(str, l))
+
+def choose(lst, indicator):
+    return [l for l, i in izip(lst, indicator) if i]
