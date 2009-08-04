@@ -1,5 +1,3 @@
-#!/usr/bin/env python
-
 from __future__ import absolute_import
 from os import environ, path
 from ConfigParser import SafeConfigParser, NoSectionError
@@ -121,15 +119,17 @@ class ConfigDict(dict):
 class Configuration(object):
     """ Container for several dictionaries representing configuration
     options from various sources:
-    - The defaults, to be set from a Configurable instance
-    - The file config, read from all files given in the Configurable
+    - The defaults, to be set from a Configurations.register_config call
+    - The file config, read from all files given in a call to
+      Configurations.register_files
     - The command line options, passed by a CLIConfig object through
-    the static Configurations proxy class.
-    It can be used from Configurable and ConfigClient derivatives to
+      Configurations.set_cli_config
+    It can be used from ConfigClient subclasses or instances to
     obtain the value to a config key, where the precedence is
     cli->files->defaults.
     Different section names can be used for groups of options from the
-    Configurable, which correspond to the section names from the files.
+    register_config call, which correspond to the section names from the
+    files.
     
     """
     def __init__(self, defaults):
@@ -332,8 +332,8 @@ class ConfigurationFactory(object):
         return config
 
 class Configurations(object):
-    """ Program-wide register of Configurable instances.
-    Connects the clients to the according Configurable, as soon as it
+    """ Program-wide register of Configuration instances.
+    Connects the clients to the according Configuration, as soon as it
     has registered.
 
     """
@@ -347,7 +347,7 @@ class Configurations(object):
     cli_config = None
 
     # A dict of lists of client instances grouped by the name of the
-    # target Configurable's name
+    # target Configuration's name
     pending_clients = { }
 
     @classmethod
@@ -370,7 +370,7 @@ class Configurations(object):
 
             cls.configs[section] = config
 
-            debug('Configuration initialized with section \'%s\'' % section)
+            #debug('Configuration initialized with section \'%s\'' % section)
 
             cls.notify_clients(section)
 
@@ -390,7 +390,8 @@ class Configurations(object):
         try: 
             client.connect(cls.configs[client.name])
         except KeyError:
-            if not cls.pending_clients.has_key(client.name): cls.pending_clients[client.name] = [ ]
+            if not cls.pending_clients.has_key(client.name):
+                cls.pending_clients[client.name] = [ ]
             cls.pending_clients[client.name].append(client)
 
     @classmethod
