@@ -21,8 +21,18 @@ class Silencer(object):
 def repr_params(*params):
     return '(' + ', '.join(map(repr, params)) + ')'
 
-def str_list(l, j):
+def str_list(l, j=', '):
     return j.join(map(str, l))
 
 def choose(lst, indicator):
     return [l for l, i in izip(lst, indicator) if i]
+
+def make_list(*args):
+    result = []
+    for a in args:
+        if a is not None:
+            if isinstance(a, list):
+                result.extend(filter(lambda e: e is not None, a))
+            else:
+                result.append(a)
+    return result
