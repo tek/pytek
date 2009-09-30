@@ -15,10 +15,13 @@ Place, Suite 330, Boston, MA  02111-1307  USA
 
 }}} """
 
+from __future__ import print_function
+
 import sys
-from itertools import izip
+from itertools import izip, imap, repeat
 
 def zip_fill(default, *seqs):
+    # TODO itertools.zip_longest
     filler = lambda *seq: [el if el is not None else default for el in seq]
     return map(filler, *seqs)
 
@@ -38,9 +41,9 @@ class Silencer(object):
 def repr_params(*params):
     return '(' + ', '.join(map(repr, params)) + ')'
 
-def str_list(l, j=', ', printer=lambda s: s):
+def str_list(l, j=', ', printer=lambda s: s, typ=unicode):
     strings = map(printer, l)
-    return j.join(map(unicode, strings))
+    return j.join(map(typ, strings))
 
 def choose(lst, indicator):
     return [l for l, i in izip(lst, indicator) if i]
@@ -54,3 +57,29 @@ def make_list(*args):
             else:
                 result.append(a)
     return result
+
+must_repeat = lambda x: isinstance(x, (str, unicode)) or hasattr(x, 'ymap_repeat')
+must_not_repeat = lambda x: isinstance(x, repeat) or hasattr(x, '__len__') or hasattr(x, '__iter__')
+iterify = lambda x: x if not must_repeat(x) and must_not_repeat(x) else repeat(x)
+
+def yimap(func, *args, **kwargs):
+    return imap(lambda *a: func(*a, **kwargs), *imap(iterify, args))
+
+def ymap(*args, **kwargs):
+    return list(yimap(*args, **kwargs))
+
+def pretty(arg):
+    if hasattr(arg, 'pretty'):
+        return arg.pretty
+    elif isinstance(arg, list):
+        return str_list(arg, printer=pretty)
+    else:
+        return unicode(arg)
+
+def short(arg):
+    if hasattr(arg, 'short'):
+        return arg.short
+    elif isinstance(arg, list):
+        return str_list(arg, printer=short)
+    else:
+        return unicode(arg)

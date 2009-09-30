@@ -18,7 +18,9 @@ Place, Suite 330, Boston, MA  02111-1307  USA
 from __future__ import print_function
 
 from tek.terminal import TerminalController
-from tek.tools import str_list
+from tek.tools import str_list, pretty, short
+from dispatch import generic, on
+from dispatch.strategy import Signature
 
 class CommandLine(object):
     term = TerminalController()
@@ -26,46 +28,78 @@ class CommandLine(object):
     prompt = ''
     suffix = '>>>'
     prefixes = []
+    suffixes = []
 
-    @classmethod
     def color(self, level):
         c = self.level_colors[level % len(self.level_colors)]
         return getattr(self.term, c.upper())
 
-    @classmethod
-    def level_up(self, prefix=''):
+    def level_up(self, prefix='', suffix=None):
+        suffix = self.suffix if suffix is None else suffix
         self.prefixes.append(prefix)
+        self.suffixes.append(suffix)
         self.reconstruct_prompt()
 
-    @classmethod
     def level_down(self, count=1):
         del self.prefixes[-count:]
+        del self.suffixes[-count:]
         self.reconstruct_prompt()
 
-    @classmethod
+    def __call__(self, msg):
+        return self.print_(msg)
+
+    def pretty(self, msg):
+        return self(pretty(msg))
+
+    def short(self, msg):
+        return self(short(msg))
+
+    @generic()
     def print_(self, msg):
-        if hasattr(msg, '__iter__'):
-            map(self.print_, msg)
-        else:
-            map(self.print_line, unicode(msg).split('\n'))
+        """ print stuff with a nested prompt.
 
-    @classmethod
+        """
+
+    @print_.when(Signature(msg=list))
+    def print_(self, msg):
+        map(self.print_, msg)
+
+    @print_.when(Signature())
+    def print_(self, msg):
+        map(self.print_line, unicode(msg).split('\n'))
+
     def print_line(self, line):
-        print(self.prompt + unicode(line))
+        if isinstance(line, unicode):
+            line = line.encode('utf-8')
+        if self.prompt:
+            print(self.prompt, line)
+        else:
+            print(line)
+        #if type(line) != unicode:
+            #line = unicode(line)
+        #print(self.prompt, line.encode('utf-8'))
 
-    @classmethod
     def reconstruct_prompt(self):
-        prompter = lambda (l, p): self.color(l) + unicode(p) + self.suffix + \
+        prompter = lambda (l, p), s: self.color(l) + unicode(p) + s + \
                    self.term.NORMAL
-        self.prompt = str_list(map(prompter, enumerate(self.prefixes)), ' ') + \
-                      ' '
+        self.prompt = str_list(map(prompter, enumerate(self.prefixes),
+                                   self.suffixes), ' ')
+
+command_line = CommandLine()
 
 class PrefixPrinter(object):
-    def __init__(self, prefix=''):
+    def __init__(self, prefix='', suffix=None):
         self.prefix = prefix
+        self.suffix = suffix
 
     def __enter__(self):
-        CommandLine.level_up(self.prefix)
+        command_line.level_up(self.prefix, self.suffix)
 
     def __exit__(self, exc_type, exc_value, traceback):
-        CommandLine.level_down()
+        command_line.level_down()
+
+    def __call__(self, msg):
+        command_line.print_(msg)
+
+    def pretty(self, msg):
+        self(pretty(msg))
