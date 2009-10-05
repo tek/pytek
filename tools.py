@@ -20,7 +20,7 @@ from __future__ import print_function
 import sys, collections
 from itertools import izip, imap, repeat
 
-from dispatch.interfaces import AmbiguousMethod
+from dispatch.interfaces import AmbiguousMethod, NoApplicableMethods
 
 from tek.errors import MooException
 
@@ -93,13 +93,17 @@ def moo_run(func):
     try:
         func()
     except AmbiguousMethod, e:
-        #parms = (e.args[1][0].__class__.__name__, repr_params(*e.args[1][1:]))
         parms = (e.args[1][0].__class__.__name__, str_list(a.__class__.__name__
                                                            for a in e.args[1][1:]))
-        #print('dispatch ambiguity on a %s with arguments %s' % parms)
         print('dispatch ambiguity on a %s with argument types (%s)' % parms)
         print('ambiguous functions were: ' + str_list(f[1].__name__ for f in
                                                     e.args[0]))
+        raise
+    except NoApplicableMethods, e:
+        parms = (e.args[0][0].__class__.__name__, str_list(a.__class__.__name__
+                                                           for a in e.args[0][1:]))
+        print('no applicable dispatch method on a %s with argument types (%s)' %
+              parms)
         raise
     except MooException, e:
         print(e)
