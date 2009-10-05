@@ -17,8 +17,12 @@ Place, Suite 330, Boston, MA  02111-1307  USA
 
 from __future__ import print_function
 
-import sys
+import sys, collections
 from itertools import izip, imap, repeat
+
+from dispatch.interfaces import AmbiguousMethod
+
+from tek.errors import MooException
 
 def zip_fill(default, *seqs):
     # TODO itertools.zip_longest
@@ -58,8 +62,10 @@ def make_list(*args):
                 result.append(a)
     return result
 
+is_seq = lambda x: not isinstance(x, (str, unicode)) and (isinstance(x, collections.Sequence)
+                                                      or hasattr(x, '__iter__'))
 must_repeat = lambda x: isinstance(x, (str, unicode)) or hasattr(x, 'ymap_repeat')
-must_not_repeat = lambda x: isinstance(x, repeat) or hasattr(x, '__len__') or hasattr(x, '__iter__')
+must_not_repeat = lambda x: isinstance(x, repeat) or is_seq(x) or hasattr(x, '__len__')
 iterify = lambda x: x if not must_repeat(x) and must_not_repeat(x) else repeat(x)
 
 def yimap(func, *args, **kwargs):
@@ -68,18 +74,32 @@ def yimap(func, *args, **kwargs):
 def ymap(*args, **kwargs):
     return list(yimap(*args, **kwargs))
 
-def pretty(arg):
-    if hasattr(arg, 'pretty'):
-        return arg.pretty
-    elif isinstance(arg, list):
-        return str_list(arg, printer=pretty)
+def recursive_printer(name, arg):
+    if hasattr(arg, name):
+        return getattr(arg, name)
+    elif is_seq(arg):
+        return '[' + str_list(arg, printer=lambda a: 
+                              recursive_printer(name, a)) + ']'
     else:
         return unicode(arg)
 
-def short(arg):
-    if hasattr(arg, 'short'):
-        return arg.short
-    elif isinstance(arg, list):
-        return str_list(arg, printer=short)
-    else:
-        return unicode(arg)
+pretty = lambda a: recursive_printer('pretty', a)
+short = lambda a: recursive_printer('short', a)
+
+def filter_index(l, index):
+    return [l[i] for i in index]
+
+def moo_run(func):
+    try:
+        func()
+    except AmbiguousMethod, e:
+        #parms = (e.args[1][0].__class__.__name__, repr_params(*e.args[1][1:]))
+        parms = (e.args[1][0].__class__.__name__, str_list(a.__class__.__name__
+                                                           for a in e.args[1][1:]))
+        #print('dispatch ambiguity on a %s with arguments %s' % parms)
+        print('dispatch ambiguity on a %s with argument types (%s)' % parms)
+        print('ambiguous functions were: ' + str_list(f[1].__name__ for f in
+                                                    e.args[0]))
+        raise
+    except MooException, e:
+        print(e)
