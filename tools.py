@@ -17,12 +17,15 @@ Place, Suite 330, Boston, MA  02111-1307  USA
 
 from __future__ import print_function
 
-import sys, collections
+import sys, collections, operator
 from itertools import izip, imap, repeat
+
+from numpy import cumsum
 
 from dispatch.interfaces import AmbiguousMethod, NoApplicableMethods
 
 from tek.errors import MooException
+from tek.debug import debug
 
 def zip_fill(default, *seqs):
     # TODO itertools.zip_longest
@@ -64,7 +67,7 @@ def make_list(*args):
 
 is_seq = lambda x: not isinstance(x, (str, unicode)) and (isinstance(x, collections.Sequence)
                                                       or hasattr(x, '__iter__'))
-must_repeat = lambda x: isinstance(x, (str, unicode)) or hasattr(x, 'ymap_repeat')
+must_repeat = lambda x: isinstance(x, (str, unicode, type)) or hasattr(x, 'ymap_repeat')
 must_not_repeat = lambda x: isinstance(x, repeat) or is_seq(x) or hasattr(x, '__len__')
 iterify = lambda x: x if not must_repeat(x) and must_not_repeat(x) else repeat(x)
 
@@ -107,3 +110,32 @@ def moo_run(func):
         raise
     except MooException, e:
         print(e)
+
+def join_lists(l):
+    return reduce(operator.add, l, [])
+
+def ijoin_lists(l):
+    """ Convert the list of lists l its elements' sums.
+
+    """
+    if l:
+        try:
+            if not all(ymap(isinstance, l, list)):
+                raise MooException('Some elements aren\'t lists!')
+            for i in cumsum([0] + map(len, l[:-1])):
+                l[i:i+1] = l[i]
+        except Exception, e:
+            debug('ijoin_lists failed with: ' + str(e))
+    return l
+
+def pairs(list1, list2):
+    for e1 in list1:
+        for e2 in list2:
+            yield e1, e2
+
+def index_of(pred, seq):
+    return next((i for i, e in enumerate(seq) if pred(e)), None)
+
+def find(pred, seq):
+    i = index_of(pred, seq)
+    return seq[i] if i is not None else i
