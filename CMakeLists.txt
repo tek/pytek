@@ -8,4 +8,5 @@ OUTPUT_VARIABLE PYTHON_INSTDIR
 OUTPUT_STRIP_TRAILING_WHITESPACE
 )
 install(FILES __init__.py process.py config.py debug.py errors.py tools.py
+	user_input.py command_line.py terminal.py
 	DESTINATION ${PYTHON_INSTDIR}/tek)
