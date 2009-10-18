@@ -15,51 +15,63 @@ Place, Suite 330, Boston, MA  02111-1307  USA
 
 }}} """
 
+from itertools import imap
 from re import compile as regex
+
+from tek.tools import *
 from tek.errors import InternalError
 from tek.command_line import command_line
 
-# TODO make text a list of lines
-
 class UserInput(object):
-    def __init__(self, text, validator=None, validate=True):
-        self.input = None
-        self.text = text
-        self.validator = validator
-        self.validate = validate
+    def __init__(self, text, validator=None, validate=True, args=False):
+        """ @param args bool: allow space separated arguments to the input
+
+        """
+        self._text = text
+        self._validator = validator
+        self._validate = validate
+        self._allow_args = args
+        self.__init_attributes()
+
+    def __init_attributes(self):
+        self._input = None
+        self._args = None
 
     @property
     def value(self):
-        return self.input
+        return self._input
+
+    @property
+    def args(self):
+        return self. _args
 
     def read(self):
-        prompt = self.text + ' '
+        prompt = str_list(self._text, j='\n') + ' '
         if isinstance(prompt, unicode):
             prompt = prompt.encode('utf-8')
-        wait = True
-        while wait:
-            self.input = raw_input(prompt)
-            if (not self.validate) or (not self.validator) or \
-               self.validator.match(str(self.input)):
-                wait = False
-            else:
-                prompt = "Invalid input. Try again: "
+        while self._read(prompt):
+            prompt = "Invalid input. Try again: "
         return self.value
 
+    def _read(self, prompt):
+            self._input = raw_input(prompt)
+            return self._validate and self._validator and not \
+                   self._validator.match(str(self._input))
+
 class SimpleChoice(UserInput):
-    def __init__(self, elements, text='Choose one'):
+    def __init__(self, elements, text=['Choose one'], *args, **kwargs):
         strings = map(str, elements)
         validator = regex(r'^(%s)$' % '|'.join(strings))
-        text += ' [' + '/'.join(strings) + ']'
+        text[-1] += ' [' + '/'.join(strings) + ']'
         UserInput.__init__(self, text, validator)
 
 class YesNo(SimpleChoice):
-    def __init__(self, text='Confirm'):
+    def __init__(self, text=['Confirm'], *args, **kwargs):
         SimpleChoice.__init__(self, ['y', 'n'], text)
 
     @property
     def value(self):
-        return self.input == 'y'
+        return self._input == 'y'
 
     def __nonzero__(self):
         return self.value
@@ -74,8 +86,8 @@ class SpecifiedChoice(UserInput):
         self.choices = dict(enumerate(elements))
         self.additional = additional
         for k, v in self.choices.iteritems():
-            text += '\n [%d] %s' % (k + 1, v)
-        text += "\nEnter your choice:"
+            text.append(' [%d] %s' % (k + 1, v))
+        text.append("Enter your choice:")
         validator = regex(r'^(%s)$' % '|'.join(map(str,
                                                    xrange(1, len(elements) + 1))
                                                + additional))
@@ -83,11 +95,11 @@ class SpecifiedChoice(UserInput):
 
     @property
     def value(self):
-        if self.input in self.additional:
-            return self.input
-        elif self.input.isdigit():
-            return self.choices[int(self.input) - 1]
-        elif not self.validate:
-            return self.input
+        if self._input in self.additional:
+            return self._input
+        elif self._input.isdigit():
+            return self.choices[int(self._input) - 1]
+        elif not self._validate:
+            return self._input
         else:
-            raise InternalError('SpecifiedChoice: strange input: ' + self.input)
+            raise InternalError('SpecifiedChoice: strange input: ' + self._input)
