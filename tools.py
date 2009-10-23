@@ -20,7 +20,10 @@ from __future__ import print_function
 import sys, collections, operator
 from itertools import *
 
-from numpy import cumsum
+try:
+    from numpy import cumsum
+except:
+    cumsum = lambda s: reduce(lambda a, b: a + [a[-1] + b], s[1:], s[:1])
 
 from dispatch.interfaces import AmbiguousMethod, NoApplicableMethods
 
