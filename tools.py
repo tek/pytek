@@ -65,6 +65,9 @@ def make_list(*args):
                 result.append(a)
     return result
 
+def camelcaseify(name):
+    return ''.join([n.capitalize() for n in name.split('_')])
+
 is_seq = lambda x: not isinstance(x, (str, unicode)) and (isinstance(x, collections.Sequence)
                                                       or hasattr(x, '__iter__'))
 must_repeat = lambda x: isinstance(x, (str, unicode, type)) or hasattr(x, 'ymap_repeat')
