@@ -18,7 +18,7 @@ Place, Suite 330, Boston, MA  02111-1307  USA
 from __future__ import print_function
 
 import sys, collections, operator
-from itertools import izip, imap, repeat
+from itertools import *
 
 from numpy import cumsum
 
@@ -142,3 +142,6 @@ def index_of(pred, seq):
 def find(pred, seq):
     i = index_of(pred, seq)
     return seq[i] if i is not None else i
+
+def find_iter(pred, it):
+    return next(ifilter(pred, it), None)
