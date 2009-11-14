@@ -72,3 +72,7 @@ class ConfigClientNotYetConnectedError(ConfigError):
 class InternalError(MooException):
     pass
 
+class InvalidInput(MooException):
+    def __init__(self, string):
+        super(InvalidInput, self).__init__('Invalid input: %s' % string)
+

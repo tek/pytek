@@ -19,7 +19,7 @@ from itertools import imap
 from re import compile as regex
 
 from tek.tools import *
-from tek.errors import InternalError
+from tek.errors import InternalError, InvalidInput
 from tek.command_line import command_line
 
 class UserInput(object):
@@ -50,7 +50,7 @@ class UserInput(object):
         return self. _args
 
     def read(self):
-        prompt = str_list(self._text, j='\n') + ' '
+        prompt = self.prompt
         if isinstance(prompt, unicode):
             prompt = prompt.encode('utf-8')
         while not self._read(prompt):
@@ -61,6 +61,7 @@ class UserInput(object):
         return self._do_input(raw_input(prompt))
 
     def input(self, input):
+        print self.prompt
         if self._do_input(input):
             return self.value
         else:
@@ -73,6 +74,10 @@ class UserInput(object):
     def _validate(self):
         return not (self._do_validate and self._validator and not
                     self._validator.match(str(self._input)))
+
+    @property
+    def prompt(self):
+        return str_list(self._text, j='\n') + ' '
 
 class SimpleChoice(UserInput):
     def __init__(self, elements, text=['Choose one'], additional=[], *args,
@@ -122,6 +127,17 @@ class SpecifiedChoice(SimpleChoice):
             return self._input
         elif self._input.isdigit() and 0 < int(self._input) <= len(self._choices):
             return self._choices[int(self._input) - 1]
+        elif not self._do_validate:
+            return self._input
+        else:
+            raise InternalError('SpecifiedChoice: strange input: ' + self._input)
+
+    @property
+    def raw_value(self):
+        if self._input in self._simple:
+            return self._input
+        elif self._input.isdigit() and 0 < int(self._input) <= len(self._choices):
+            return self._input
         elif not self._do_validate:
             return self._input
         else:
