@@ -26,7 +26,7 @@ class CommandLine(object):
     term = TerminalController()
     level_colors = ['green', 'cyan', 'red', 'yellow']
     prompt = ''
-    suffix = '>>>'
+    suffix = '>'
     prefixes = []
     suffixes = []
 
@@ -48,11 +48,14 @@ class CommandLine(object):
     def __call__(self, msg):
         return self.print_(msg)
 
-    def pretty(self, msg):
-        return self(pretty(msg))
+    def pretty(self, *msgs):
+        return self.recursive_print(pretty, msgs)
 
-    def short(self, msg):
-        return self(short(msg))
+    def short(self, *msgs):
+        return self.recursive_print(short, msgs)
+
+    def recursive_print(self, printer, msgs):
+        return self(str_list(msgs, j=' ', printer=printer))
 
     @generic()
     def print_(self, msg):

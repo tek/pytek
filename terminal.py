@@ -21,7 +21,7 @@ THE SOFTWARE.
 
 import sys, re
 
-class TerminalController:
+class TerminalController(object):
     """
     A class that can be used to portably generate formatted output to
     a terminal.  
