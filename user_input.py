@@ -82,6 +82,8 @@ class UserInput(object):
 class SimpleChoice(UserInput):
     def __init__(self, elements, text=['Choose one'], additional=[], *args,
                  **kwargs):
+        if isinstance(text, str):
+            text = [text]
         self._elements = map(str, elements)
         self._additional = map(str, additional)
         if self._elements:
