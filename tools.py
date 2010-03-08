@@ -51,8 +51,10 @@ class Silencer(object):
 def repr_params(*params):
     return '(' + ', '.join(map(repr, params)) + ')'
 
-def str_list(l, j=', ', printer=lambda s: s, typ=unicode):
+def str_list(l, j=', ', printer=lambda s: s, typ=unicode, do_filter=False):
     strings = map(printer, l)
+    if do_filter:
+        strings = ifilter(None, strings)
     return j.join(map(typ, strings))
 
 def choose(lst, indicator):
