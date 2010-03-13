@@ -21,6 +21,9 @@ THE SOFTWARE.
 
 import sys, re
 
+from dispatch import generic
+from dispatch.strategy import Signature
+
 class TerminalController(object):
     """
     A class that can be used to portably generate formatted output to
@@ -166,6 +169,9 @@ class TerminalController(object):
         if s == '$$': return s
         else: return getattr(self, s[2:-1])
 
+    def write(self, stuff):
+        sys.stdout.write(stuff)
+
 #######################################################################
 # Example use case: progress bar
 #######################################################################
@@ -211,3 +217,65 @@ class ProgressBar:
                              self.term.UP + self.term.CLEAR_EOL +
                              self.term.UP + self.term.CLEAR_EOL)
             self.cleared = 1
+
+up = 'UP'
+down = 'DOWN'
+left = 'LEFT'
+right = 'RIGHT'
+start = 'BOL'
+
+class Terminal(object):
+    terminal_controller = TerminalController()
+    _lines = 0
+    _locked = False
+
+    def __init__(self):
+        self.unlock()
+
+    def tcap(self, string):
+        return getattr(self.terminal_controller, string, '')
+
+    def move(self, direction, count=1):
+        string = self.tcap(direction) * count
+        self.write(string)
+
+    def lock(self):
+        self._lines = 0
+        self._locked = True
+
+    def unlock(self):
+        self._locked = False
+
+    def write(self, string):
+        self.terminal_controller.write(string)
+        
+    @generic()
+    def write_lines(self, data):
+        pass
+
+    @write_lines.when(Signature(data=str) | Signature(data=unicode))
+    def write_line(self, data):
+        lines = data.split('\n')
+        if len(lines) == 1:
+            if self._locked:
+                self._lines += 1
+            self.write(lines[0] + '\n')
+        else:
+            self.write(lines)
+
+    @write_lines.when(Signature(data=list) | Signature(data=tuple))
+    def write_seq(self, data):
+        for line in data:
+            self.write_lines(line)
+
+    def clear(self):
+        self.move(start)
+        self.move(up, self._lines + 1)
+        self.write(self.tcap('CLEAR_EOS'))
+        self.lock()
+
+    def __getattr__(self, name):
+        if hasattr(self.terminal_controller, name.upper()):
+            return getattr(self.terminal_controller, name.upper())
+        else:
+            raise AttributeError(name)
