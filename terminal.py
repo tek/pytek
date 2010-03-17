@@ -195,11 +195,12 @@ class Terminal(object):
         self.write(string)
 
     def lock(self):
-        self._lines = 0
-        self._locked = True
+        Terminal._lines = 0
+        Terminal._locked = True
 
     def unlock(self):
-        self._locked = False
+        Terminal._lines = 0
+        Terminal._locked = False
 
     def write(self, string):
         self.terminal_controller.write(string)
@@ -213,10 +214,10 @@ class Terminal(object):
         lines = data.split('\n')
         if len(lines) == 1:
             if self._locked:
-                self._lines += 1
+                Terminal._lines += 1
             self.write(lines[0] + '\n')
         else:
-            self.write(lines)
+            self.write_lines(lines)
 
     @write_lines.when(Signature(data=list) | Signature(data=tuple))
     def write_seq(self, data):
