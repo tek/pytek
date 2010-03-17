@@ -19,7 +19,8 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 THE SOFTWARE.
 }}} """
 
-import sys, re
+import termios, fcntl, sys, os, re
+from time import sleep
 
 from dispatch import generic
 from dispatch.strategy import Signature
@@ -172,52 +173,6 @@ class TerminalController(object):
     def write(self, stuff):
         sys.stdout.write(stuff)
 
-#######################################################################
-# Example use case: progress bar
-#######################################################################
-
-class ProgressBar:
-    """
-    A 3-line progress bar, which looks like::
-    
-                                Header
-        20% [===========----------------------------------]
-                           progress message
-
-    The progress bar is colored, if the terminal supports color
-    output; and adjusts to the width of the terminal.
-    """
-    BAR = '%3d%% ${GREEN}[${BOLD}%s%s${NORMAL}${GREEN}]${NORMAL}\n'
-    HEADER = '${BOLD}${CYAN}%s${NORMAL}\n\n'
-        
-    def __init__(self, term, header):
-        self.term = term
-        if not (self.term.CLEAR_EOL and self.term.UP and self.term.BOL):
-            raise ValueError("Terminal isn't capable enough -- you "
-                             "should use a simpler progress dispaly.")
-        self.width = self.term.COLS or 75
-        self.bar = term.render(self.BAR)
-        self.header = self.term.render(self.HEADER % header.center(self.width))
-        self.cleared = 1 #: true if we haven't drawn the bar yet.
-        self.update(0, '')
-
-    def update(self, percent, message):
-        if self.cleared:
-            sys.stdout.write(self.header)
-            self.cleared = 0
-        n = int((self.width-10)*percent)
-        sys.stdout.write(
-            self.term.BOL + self.term.UP + self.term.CLEAR_EOL +
-            (self.bar % (100*percent, '='*n, '-'*(self.width-10-n))) +
-            self.term.CLEAR_EOL + message.center(self.width))
-
-    def clear(self):
-        if not self.cleared:
-            sys.stdout.write(self.term.BOL + self.term.CLEAR_EOL +
-                             self.term.UP + self.term.CLEAR_EOL +
-                             self.term.UP + self.term.CLEAR_EOL)
-            self.cleared = 1
-
 up = 'UP'
 down = 'DOWN'
 left = 'LEFT'
@@ -250,11 +205,11 @@ class Terminal(object):
         self.terminal_controller.write(string)
         
     @generic()
-    def write_lines(self, data):
+    def write_lines(self, data=''):
         pass
 
     @write_lines.when(Signature(data=str) | Signature(data=unicode))
-    def write_line(self, data):
+    def write_line(self, data=''):
         lines = data.split('\n')
         if len(lines) == 1:
             if self._locked:
@@ -268,9 +223,14 @@ class Terminal(object):
         for line in data:
             self.write_lines(line)
 
+    def clear_line(self):
+        """ Delete the current line, but don't move up """
+        self.move(start)
+        self.write(self.tcap('CLEAR_EOL'))
+
     def clear(self):
         self.move(start)
-        self.move(up, self._lines + 1)
+        self.move(up, self._lines)
         self.write(self.tcap('CLEAR_EOS'))
         self.lock()
 
@@ -279,3 +239,27 @@ class Terminal(object):
             return getattr(self.terminal_controller, name.upper())
         else:
             raise AttributeError(name)
+
+    def key_press(self):
+        fd = sys.stdin.fileno()
+        oldterm = termios.tcgetattr(fd)
+        newattr = termios.tcgetattr(fd)
+        newattr[3] = newattr[3] & ~termios.ICANON & ~termios.ECHO
+        termios.tcsetattr(fd, termios.TCSANOW, newattr)
+        oldflags = fcntl.fcntl(fd, fcntl.F_GETFL)
+        fcntl.fcntl(fd, fcntl.F_SETFL, oldflags | os.O_NONBLOCK)
+        done = False
+        c = None
+        try:
+            while not done:
+                try:
+                    c = sys.stdin.read(1)
+                    done = True
+                except IOError:
+                    sleep(0.01)
+        finally:
+            termios.tcsetattr(fd, termios.TCSAFLUSH, oldterm)
+            fcntl.fcntl(fd, fcntl.F_SETFL, oldflags)
+        return c
+
+terminal = Terminal()
