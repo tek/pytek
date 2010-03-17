@@ -101,11 +101,15 @@ class SingleCharSimpleChoice(SimpleChoice):
     """ Restrict input to single characters, allowing omission of
     newline for input.
     """
-    def __init__(self, elements, newline=True, *args, **kwargs):
+    def __init__(self, elements, newline=True, enter=None, *args, **kwargs):
         self._newline = newline
+        additional = [''] if enter else []
+        self._enter = enter
         if any(len(str(e)) != 1 for e in elements):
             raise MooException('Invalid characters for SingleCharSimpleChoice!')
-        super(SingleCharSimpleChoice, self).__init__(elements, *args, **kwargs)
+        super(SingleCharSimpleChoice, self).__init__(elements,
+                                                     additional=additional,
+                                                     *args, **kwargs)
 
     def _read(self, prompt):
         terminal.write(prompt)
@@ -114,9 +118,14 @@ class SingleCharSimpleChoice(SimpleChoice):
             terminal.write_line('')
         return c
         
+    def _do_input(self, input):
+        return super(SingleCharSimpleChoice, self)._do_input(self._enter if
+                                                             self._enter and
+                                                             input == '\n' else
+                                                             input)
 class YesNo(SingleCharSimpleChoice):
     def __init__(self, text=['Confirm'], *args, **kwargs):
-        SingleCharSimpleChoice.__init__(self, ['y', 'n'], text=text)
+        SingleCharSimpleChoice.__init__(self, ['y', 'n'], text=text, enter='y')
 
     @property
     def value(self):
