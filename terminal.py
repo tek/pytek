@@ -244,7 +244,7 @@ class Terminal(object):
         fd = sys.stdin.fileno()
         oldterm = termios.tcgetattr(fd)
         newattr = termios.tcgetattr(fd)
-        newattr[3] = newattr[3] & ~termios.ICANON
+        newattr[3] = newattr[3] & ~termios.ICANON & ~termios.ECHO
         termios.tcsetattr(fd, termios.TCSANOW, newattr)
         oldflags = fcntl.fcntl(fd, fcntl.F_GETFL)
         fcntl.fcntl(fd, fcntl.F_SETFL, oldflags | os.O_NONBLOCK)
@@ -254,6 +254,8 @@ class Terminal(object):
             while not done:
                 try:
                     c = sys.stdin.read(1)
+                    if c != '\n':
+                        self.write(c)
                     done = True
                 except IOError:
                     sleep(0.01)
