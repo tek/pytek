@@ -21,10 +21,9 @@ from re import compile as regex
 from tek.tools import *
 from tek.errors import InternalError, InvalidInput, MooException
 from tek.command_line import command_line
-from tek.terminal import Terminal
+from tek.terminal import terminal
 
 class UserInput(object):
-    _terminal = Terminal()
     def __init__(self, text, validator=None, validate=True, args=False):
         """ @param args bool: allow space separated arguments to the input
 
@@ -56,6 +55,7 @@ class UserInput(object):
         if isinstance(prompt, unicode):
             prompt = prompt.encode('utf-8')
         while not self._read(prompt):
+            terminal.clear_line()
             prompt = "Invalid input. Try again: "
         return self.value
 
@@ -64,7 +64,7 @@ class UserInput(object):
 
     def input(self, input):
         """ Synthetic input, replacing user interaction """
-        print self.prompt
+        terminal.write_line(self.prompt)
         if self._do_input(input):
             return self.value
         else:
@@ -101,20 +101,22 @@ class SingleCharSimpleChoice(SimpleChoice):
     """ Restrict input to single characters, allowing omission of
     newline for input.
     """
-    def __init__(self, elements, *args, **kwargs):
-        if any(len(e) != 1 for e in elements):
+    def __init__(self, elements, newline=True, *args, **kwargs):
+        self._newline = newline
+        if any(len(str(e)) != 1 for e in elements):
             raise MooException('Invalid characters for SingleCharSimpleChoice!')
         super(SingleCharSimpleChoice, self).__init__(elements, *args, **kwargs)
 
     def _read(self, prompt):
-        print prompt,
-        c = self._do_input(self._terminal.key_press())
-        print
+        terminal.write(prompt)
+        c = self._do_input(terminal.key_press())
+        if self._newline:
+            terminal.write_line('')
         return c
         
 class YesNo(SingleCharSimpleChoice):
     def __init__(self, text=['Confirm'], *args, **kwargs):
-        SimpleChoice.__init__(self, ['y', 'n'], text)
+        SingleCharSimpleChoice.__init__(self, ['y', 'n'], text=text)
 
     @property
     def value(self):
