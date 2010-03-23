@@ -130,6 +130,7 @@ class SingleCharSimpleChoice(SimpleChoice):
                                                              self._enter and
                                                              input == '\n' else
                                                              input)
+
 class YesNo(SingleCharSimpleChoice):
     def __init__(self, text=['Confirm'], *args, **kwargs):
         SingleCharSimpleChoice.__init__(self, ['y', 'n'], text=text, enter='y')
@@ -151,9 +152,6 @@ class SpecifiedChoice(SingleCharSimpleChoice):
         for i, v in enumerate(self._choices):
             text.append(' [%d] %s' % (i + 1, v))
         text.append("Enter your choice:")
-        #validator = regex(r'^(%s)$' % '|'.join(map(str,
-                                                   #xrange(1, len(elements) + 1))
-                                               #+ simple))
         elements = range(1, len(elements) + 1)
         SingleCharSimpleChoice.__init__(self, elements=elements, text=text,
                                         additional=simple, *args, **kwargs)

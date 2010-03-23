@@ -17,7 +17,7 @@ Place, Suite 330, Boston, MA  02111-1307  USA
 
 from __future__ import print_function
 
-import sys, collections, operator
+import sys, collections, operator, os
 from itertools import *
 
 try:
@@ -73,11 +73,15 @@ def make_list(*args):
 def camelcaseify(name):
     return ''.join([n.capitalize() for n in name.split('_')])
 
-is_seq = lambda x: not isinstance(x, (str, unicode)) and (isinstance(x, collections.Sequence)
-                                                      or hasattr(x, '__iter__'))
-must_repeat = lambda x: isinstance(x, (str, unicode, type)) or hasattr(x, 'ymap_repeat')
-must_not_repeat = lambda x: isinstance(x, repeat) or is_seq(x) or hasattr(x, '__len__')
-iterify = lambda x: x if not must_repeat(x) and must_not_repeat(x) else repeat(x)
+is_seq = lambda x: not isinstance(x, (str, unicode)) and \
+                   (isinstance(x, collections.Sequence) or
+                    hasattr(x, '__iter__'))
+must_repeat = lambda x: isinstance(x, (str, unicode, type)) or \
+                        hasattr(x, 'ymap_repeat')
+must_not_repeat = lambda x: isinstance(x, repeat) or is_seq(x) or \
+                            hasattr(x, '__len__')
+iterify = lambda x: x if not must_repeat(x) and must_not_repeat(x) else \
+                    repeat(x)
 
 def yimap(func, *args, **kwargs):
     return imap(lambda *a: func(*a, **kwargs), *imap(iterify, args))
@@ -150,3 +154,6 @@ def find(pred, seq):
 
 def find_iter(pred, it):
     return next(ifilter(pred, it), None)
+
+def listdir_abs(dirname):
+    return [os.path.join(dirname, f) for f in os.listdir(dirname)]
