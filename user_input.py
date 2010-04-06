@@ -23,6 +23,9 @@ from tek.errors import InternalError, InvalidInput, MooException
 from tek.command_line import command_line
 from tek.terminal import terminal
 
+def is_digit(arg):
+    return isinstance(arg, int) or (isinstance(arg, str) and arg.isdigit())
+    
 class UserInput(object):
     def __init__(self, text, validator=None, validate=True, args=False):
         """ @param args bool: allow space separated arguments to the input
@@ -136,9 +139,7 @@ class YesNo(SingleCharSimpleChoice):
 
 class SpecifiedChoice(SimpleChoice):
     """ Automatically supply enumeration for the strings available for
-    choice and query for a number. Can additionally take custom strings
-    as valid input.
-
+    choice and query for a number.
     """
     def __init__(self, elements, text, simple=[], *args, **kwargs):
         self._choices = elements
@@ -152,24 +153,26 @@ class SpecifiedChoice(SimpleChoice):
         elements = range(1, len(elements) + 1)
         SimpleChoice.__init__(self, simple, text, elements, *args, **kwargs)
 
+    def _is_choice_index(self, index):
+        return is_digit(index) and 0 < int(index) <= len(self._choices)
+
     @property
     def value(self):
-        if self._input in self._simple:
-            return self._input
-        elif self._input.isdigit() and 0 < int(self._input) <= len(self._choices):
-            return self._choices[int(self._input) - 1]
+        i = self._input
+        if i in self._simple:
+            return i
+        elif self._is_choice_index(i):
+            return self._choices[int(i) - 1]
         elif not self._do_validate:
-            return self._input
+            return i
         else:
             raise InternalError('SpecifiedChoice: strange input: ' + self._input)
 
     @property
     def raw_value(self):
-        if self._input in self._simple:
-            return self._input
-        elif self._input.isdigit() and 0 < int(self._input) <= len(self._choices):
-            return self._input
-        elif not self._do_validate:
-            return self._input
+        i = self._input
+        if i in self._simple or self._is_choice_index(i) or not \
+           self._do_validate:
+            return i
         else:
             raise InternalError('SpecifiedChoice: strange input: ' + self._input)
