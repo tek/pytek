@@ -141,7 +141,7 @@ class YesNo(SingleCharSimpleChoice):
     def __nonzero__(self):
         return self.value
 
-class SpecifiedChoice(SimpleChoice):
+class SpecifiedChoice(SingleCharSimpleChoice):
     """ Automatically supply enumeration for the strings available for
     choice and query for a number.
     """
@@ -155,7 +155,8 @@ class SpecifiedChoice(SimpleChoice):
                                                    #xrange(1, len(elements) + 1))
                                                #+ simple))
         elements = range(1, len(elements) + 1)
-        SimpleChoice.__init__(self, simple, text, elements, *args, **kwargs)
+        SingleCharSimpleChoice.__init__(self, elements=elements, text=text,
+                                        additional=simple, *args, **kwargs)
 
     def _is_choice_index(self, index):
         return is_digit(index) and 0 < int(index) <= len(self._choices)
