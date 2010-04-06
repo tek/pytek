@@ -102,17 +102,21 @@ class SimpleChoice(UserInput):
 
 class SingleCharSimpleChoice(SimpleChoice):
     """ Restrict input to single characters, allowing omission of
-    newline for input.
+    newline for input. Fallback to conventional SimpleChoice if choices
+    contain multi-char elements.
     """
-    def __init__(self, elements, newline=True, enter=None, *args, **kwargs):
+    def __init__(self, elements, newline=True, enter=None, additional=[], *args,
+                 **kwargs):
         self._newline = newline
-        additional = [''] if enter else []
+        if enter:
+            additional += ['']
         self._enter = enter
-        if any(len(str(e)) != 1 for e in elements):
-            raise MooException('Invalid characters for SingleCharSimpleChoice!')
         super(SingleCharSimpleChoice, self).__init__(elements,
                                                      additional=additional,
                                                      *args, **kwargs)
+        if any(len(str(e)) != 1 for e in elements) or not self._do_validate:
+            self._read = super(SingleCharSimpleChoice, self)._read
+            self._do_input = super(SingleCharSimpleChoice, self)._do_input
 
     def _read(self, prompt):
         terminal.write(prompt)
