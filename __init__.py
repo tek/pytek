@@ -21,3 +21,4 @@ from .config import Configurations, CLIConfig, ConfigClient
 from .debug import debug
 from .errors import MooException
 from .command_line import command_line, PrefixPrinter
+from .user_input import YesNo
