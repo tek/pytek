@@ -297,7 +297,7 @@ class CLIConfig(object):
     """ Proxy for setting the command line arguments as config values.
     
     """
-    def __init__(self, values = None):
+    def __init__(self, values=None):
         self.set_cli_config(values)
     
     def set_cli_config(self, values):
