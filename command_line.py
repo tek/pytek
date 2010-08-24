@@ -17,7 +17,7 @@ Place, Suite 330, Boston, MA  02111-1307  USA
 
 from __future__ import print_function
 
-from tek.terminal import TerminalController
+from tek.terminal import TerminalController, terminal
 from tek.tools import str_list, pretty, short
 from dispatch import generic, on
 from dispatch.strategy import Signature
@@ -78,9 +78,6 @@ class CommandLine(object):
             print(self.prompt, line)
         else:
             print(line)
-        #if type(line) != unicode:
-            #line = unicode(line)
-        #print(self.prompt, line.encode('utf-8'))
 
     def reconstruct_prompt(self):
         prompter = lambda (l, p), s: self.color(l) + unicode(p) + s + \
