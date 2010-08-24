@@ -178,6 +178,7 @@ down = 'DOWN'
 left = 'LEFT'
 right = 'RIGHT'
 start = 'BOL'
+end = 'EOL'
 
 class Terminal(object):
     terminal_controller = TerminalController()
@@ -209,13 +210,18 @@ class Terminal(object):
     def write_lines(self, data=''):
         pass
 
-    @write_lines.when(Signature(data=str) | Signature(data=unicode))
+    @write_lines.when(Signature(data=unicode))
+    def write_unicode_line(self, data=unicode('')):
+        self.write_lines(data.encode('utf-8'))
+
+    @write_lines.when(Signature(data=str))
     def write_line(self, data=''):
         lines = data.split('\n')
         if len(lines) == 1:
+            line = lines[0]
             if self._locked:
                 Terminal._lines += 1
-            self.write(lines[0] + '\n')
+            self.write('\n' + line)
         else:
             self.write_lines(lines)
 
@@ -223,6 +229,12 @@ class Terminal(object):
     def write_seq(self, data):
         for line in data:
             self.write_lines(line)
+
+    def delete_line(self):
+        self.move(start)
+        self.write(self.tcap('CLEAR_EOL'))
+        self.move(up)
+        Terminal._lines -= 1
 
     def clear_line(self):
         """ Delete the current line, but don't move up """
