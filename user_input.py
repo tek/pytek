@@ -27,7 +27,8 @@ def is_digit(arg):
     return isinstance(arg, int) or (isinstance(arg, str) and arg.isdigit())
     
 class UserInput(object):
-    def __init__(self, text, validator=None, validate=True, args=False):
+    def __init__(self, text, validator=None, validate=True, args=False,
+                 newline=True):
         """ @param args bool: allow space separated arguments to the input
 
         """
@@ -35,6 +36,7 @@ class UserInput(object):
         self._validator = validator
         self._do_validate = validate
         self._allow_args = args
+        self._newline = newline
         self.__init_attributes()
 
     def __init_attributes(self):
@@ -58,8 +60,10 @@ class UserInput(object):
         if isinstance(prompt, unicode):
             prompt = prompt.encode('utf-8')
         while not self._read(prompt):
-            terminal.clear_line()
+            terminal.delete_line()
             prompt = "Invalid input. Try again: "
+        if self._newline:
+            terminal.write_line()
         return self.value
 
     def _read(self, prompt):
@@ -105,9 +109,7 @@ class SingleCharSimpleChoice(SimpleChoice):
     newline for input. Fallback to conventional SimpleChoice if choices
     contain multi-char elements.
     """
-    def __init__(self, elements, newline=True, enter=None, additional=[], *args,
-                 **kwargs):
-        self._newline = newline
+    def __init__(self, elements, enter=None, additional=[], *args, **kwargs):
         if enter:
             additional += ['']
         self._enter = enter
@@ -119,11 +121,8 @@ class SingleCharSimpleChoice(SimpleChoice):
             self._do_input = super(SingleCharSimpleChoice, self)._do_input
 
     def _read(self, prompt):
-        terminal.write(prompt)
-        c = self._do_input(terminal.key_press())
-        if self._newline:
-            terminal.write_line('')
-        return c
+        terminal.write_lines(prompt)
+        return self._do_input(terminal.key_press())
         
     def _do_input(self, input):
         return super(SingleCharSimpleChoice, self)._do_input(self._enter if
