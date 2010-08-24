@@ -1,4 +1,7 @@
 from os import environ
 
+dodebug = environ.has_key("PYTHONDEBUG")
+
 def debug(*message):
-    if environ.has_key("PYTHONDEBUG"): print "debug:", " ".join(str(part) for part in message)
+    if dodebug:
+        print "debug:", " ".join(map(str, message))
