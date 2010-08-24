@@ -18,7 +18,7 @@ Place, Suite 330, Boston, MA  02111-1307  USA
 from __future__ import absolute_import
 from .process import process, process_output
 from .config import Configurations, CLIConfig, ConfigClient
-from .debug import debug
+from .debug import *
 from .errors import MooException
 from .command_line import command_line, PrefixPrinter
 from .user_input import YesNo
