@@ -28,7 +28,7 @@ except:
 from dispatch.interfaces import AmbiguousMethod, NoApplicableMethods
 
 from tek.errors import MooException
-from tek.debug import debug
+from tek.debug import *
 
 def zip_fill(default, *seqs):
     # TODO itertools.zip_longest
@@ -113,15 +113,19 @@ def moo_run(func):
         print('dispatch ambiguity on a %s with argument types (%s)' % parms)
         print('ambiguous functions were: ' + str_list(f[1].__name__ for f in
                                                     e.args[0]))
-        raise
+        if dodebug:
+            raise
     except NoApplicableMethods, e:
         parms = (e.args[0][0].__class__.__name__, str_list(a.__class__.__name__
                                                            for a in e.args[0][1:]))
         print('no applicable dispatch method on a %s with argument types (%s)' %
               parms)
-        raise
+        if dodebug:
+            raise
     except MooException, e:
         print(e)
+        if dodebug:
+            raise
 
 def join_lists(l):
     return reduce(operator.add, l, [])
