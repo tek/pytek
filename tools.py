@@ -105,19 +105,26 @@ def filter_index(l, index):
     return [l[i] for i in index]
 
 def moo_run(func):
+    from signal import signal, SIGINT, SIG_IGN
+    def interrupt(signum, frame):
+        signal(SIGINT, SIG_IGN)
+        print()
+        print("Interrupted by signal %d." % signum)
+        exit(1)
+    signal(SIGINT, interrupt)
     try:
         func()
     except AmbiguousMethod, e:
-        parms = (e.args[1][0].__class__.__name__, str_list(a.__class__.__name__
-                                                           for a in e.args[1][1:]))
+        parms = (e.args[1][0].__class__.__name__,
+                 str_list(a.__class__.__name__ for a in e.args[1][1:]))
         print('dispatch ambiguity on a %s with argument types (%s)' % parms)
         print('ambiguous functions were: ' + str_list(f[1].__name__ for f in
                                                     e.args[0]))
         if dodebug:
             raise
     except NoApplicableMethods, e:
-        parms = (e.args[0][0].__class__.__name__, str_list(a.__class__.__name__
-                                                           for a in e.args[0][1:]))
+        parms = (e.args[0][0].__class__.__name__,
+                 str_list(a.__class__.__name__ for a in e.args[0][1:]))
         print('no applicable dispatch method on a %s with argument types (%s)' %
               parms)
         if dodebug:
