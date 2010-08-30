@@ -18,6 +18,7 @@ Place, Suite 330, Boston, MA  02111-1307  USA
 from itertools import imap
 from re import compile as regex
 
+from tek.log import logger
 from tek.tools import *
 from tek.errors import InternalError, InvalidInput, MooException
 from tek.command_line import command_line
@@ -27,16 +28,13 @@ def is_digit(arg):
     return isinstance(arg, int) or (isinstance(arg, str) and arg.isdigit())
     
 class UserInput(object):
-    def __init__(self, text, validator=None, validate=True, args=False,
-                 newline=True):
-        """ @param args bool: allow space separated arguments to the input
-
-        """
+    def __init__(self, text, validator=None, validate=True, newline=True,
+                 single=False):
         self._text = text
         self._validator = validator
         self._do_validate = validate
-        self._allow_args = args
         self._newline = newline
+        self._single = single
         self.__init_attributes()
 
     def __init_attributes(self):
@@ -56,22 +54,28 @@ class UserInput(object):
         return self. _args
 
     def read(self):
-        prompt = self.prompt
-        if isinstance(prompt, unicode):
-            prompt = prompt.encode('utf-8')
+        clear = min(len(self.fail_prompt), len(self._text))
+        prompt = self._text[clear:]
+        if not terminal.locked:
+            terminal.lock()
+        terminal.push(self._text[:clear])
         while not self._read(prompt):
-            terminal.delete_line()
-            prompt = "Invalid input. Try again: "
+            prompt = self.fail_prompt
         if self._newline:
             terminal.write_line()
         return self.value
 
     def _read(self, prompt):
-        return self._do_input(raw_input(prompt))
+        terminal.push(prompt)
+        terminal.write(' ')
+        valid = self._do_input(terminal.key_press(self._single))
+        if not valid:
+            terminal.pop()
+        return valid
 
     def input(self, input):
         """ Synthetic input, replacing user interaction """
-        terminal.write_line(self.prompt)
+        terminal.push(self.prompt)
         if self._do_input(input):
             return self.value
         else:
@@ -86,8 +90,9 @@ class UserInput(object):
                     self._validator.match(str(self._input)))
 
     @property
-    def prompt(self):
-        return str_list(self._text, j='\n') + ' '
+    def fail_prompt(self):
+        # TODO
+        return ["Invalid input. Try again:"]
 
 class SimpleChoice(UserInput):
     def __init__(self, elements, text=['Choose one'], additional=[], *args,
@@ -109,26 +114,24 @@ class SingleCharSimpleChoice(SimpleChoice):
     newline for input. Fallback to conventional SimpleChoice if choices
     contain multi-char elements.
     """
-    def __init__(self, elements, enter=None, additional=[], *args, **kwargs):
+    def __init__(self, elements, enter=None, additional=[], validate=True,
+                 *args, **kwargs):
         if enter:
             additional += ['']
         self._enter = enter
-        super(SingleCharSimpleChoice, self).__init__(elements,
-                                                     additional=additional,
-                                                     *args, **kwargs)
-        if any(len(str(e)) != 1 for e in elements) or not self._do_validate:
-            self._read = super(SingleCharSimpleChoice, self)._read
+        single = all(len(str(e)) == 1 for e in elements) and validate
+        SimpleChoice.__init__(self, elements, additional=additional,
+                              single=single, validate=validate, *args, **kwargs)
+        if not single:
             self._do_input = super(SingleCharSimpleChoice, self)._do_input
 
-    def _read(self, prompt):
-        terminal.write_lines(prompt)
-        return self._do_input(terminal.key_press())
-        
     def _do_input(self, input):
-        return super(SingleCharSimpleChoice, self)._do_input(self._enter if
-                                                             self._enter and
-                                                             input == '\n' else
-                                                             input)
+        return SimpleChoice._do_input(self, self._enter if self._enter and input
+                                      == '\n' else input)
+
+    @property
+    def prompt(self):
+        return super(SingleCharSimpleChoice, self).prompt
 
 class YesNo(SingleCharSimpleChoice):
     def __init__(self, text=['Confirm'], *args, **kwargs):

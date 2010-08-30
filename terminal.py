@@ -25,6 +25,8 @@ from time import sleep
 from dispatch import generic
 from dispatch.strategy import Signature
 
+from tek.log import logger
+
 class TerminalController(object):
     """
     A class that can be used to portably generate formatted output to
@@ -183,7 +185,9 @@ end = 'EOL'
 class Terminal(object):
     terminal_controller = TerminalController()
     _lines = 0
-    _locked = False
+    locked = False
+    _cols = terminal_controller.COLS
+    _stack = []
 
     def __init__(self):
         self.unlock()
@@ -197,11 +201,12 @@ class Terminal(object):
 
     def lock(self):
         Terminal._lines = 0
-        Terminal._locked = True
+        Terminal.locked = True
+        del Terminal._stack[:]
 
     def unlock(self):
         Terminal._lines = 0
-        Terminal._locked = False
+        Terminal.locked = False
 
     def write(self, string):
         self.terminal_controller.write(string)
@@ -219,7 +224,7 @@ class Terminal(object):
         lines = data.split('\n')
         if len(lines) == 1:
             line = lines[0]
-            if self._locked:
+            if self.locked:
                 Terminal._lines += 1
             self.write('\n' + line)
         else:
@@ -230,21 +235,23 @@ class Terminal(object):
         for line in data:
             self.write_lines(line)
 
-    def delete_line(self):
-        self.move(start)
-        self.write(self.tcap('CLEAR_EOL'))
-        self.move(up)
-        Terminal._lines -= 1
-
     def clear_line(self):
         """ Delete the current line, but don't move up """
         self.move(start)
         self.write(self.tcap('CLEAR_EOL'))
 
-    def clear(self):
+    def delete_lines(self, num):
         self.move(start)
-        self.move(up, self._lines)
+        self.move(up, num - 1)
         self.write(self.tcap('CLEAR_EOS'))
+        Terminal._lines -= num
+        self.move(up, 1)
+
+    def delete_line(self):
+        self.delete_lines(1)
+
+    def clear(self):
+        self.delete_lines(self._lines)
         self.lock()
 
     def __getattr__(self, name):
@@ -253,7 +260,7 @@ class Terminal(object):
         else:
             raise AttributeError(name)
 
-    def key_press(self):
+    def key_press(self, single=False):
         fd = sys.stdin.fileno()
         oldterm = termios.tcgetattr(fd)
         newattr = termios.tcgetattr(fd)
@@ -263,18 +270,43 @@ class Terminal(object):
         fcntl.fcntl(fd, fcntl.F_SETFL, oldflags | os.O_NONBLOCK)
         done = False
         c = None
+        input = ''
         try:
             while not done:
                 try:
                     c = sys.stdin.read(1)
                     if c != '\n':
                         self.write(c)
-                    done = True
+                    if single:
+                        done = True
+                        input = c
+                    else:
+                        if c == '\n':
+                            done = True
+                        else:
+                            logger.debug(c)
+                            input += c
                 except IOError:
                     sleep(0.01)
+        except IOError as e:
+            self.write_lines(e)
         finally:
             termios.tcsetattr(fd, termios.TCSAFLUSH, oldterm)
             fcntl.fcntl(fd, fcntl.F_SETFL, oldflags)
-        return c
+        return input
 
+    def push(self, data):
+        old = self._lines
+        self.write_lines(data)
+        if self.locked:
+            Terminal._stack.append(self._lines - old)
+
+    def pop(self):
+        if Terminal._stack:
+            self.delete_lines(Terminal._stack.pop())
+
+class TerminalLock(object):
+    def __init__(self):
+        self._stack = []
+ 
 terminal = Terminal()
