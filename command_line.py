@@ -94,6 +94,7 @@ class PrefixPrinter(object):
 
     def __enter__(self):
         command_line.level_up(self.prefix, self.suffix)
+        return self
 
     def __exit__(self, exc_type, exc_value, traceback):
         command_line.level_down()
