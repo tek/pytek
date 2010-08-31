@@ -183,6 +183,91 @@ start = 'BOL'
 end = 'EOL'
 
 class Terminal(object):
+    class InputReader(object):
+        _move_keys = {
+            68: [left, -1],
+            67: [right, 1]
+        }
+        def __init__(self, terminal, single=False):
+            self._terminal = terminal
+            self._single = single
+            self._fd = sys.stdin.fileno()
+
+        def __enter__(self):
+            self._oldterm = termios.tcgetattr(self._fd)
+            newattr = termios.tcgetattr(self._fd)
+            newattr[3] &= ~termios.ICANON & ~termios.ECHO
+            termios.tcsetattr(self._fd, termios.TCSANOW, newattr)
+            self._oldflags = fcntl.fcntl(self._fd, fcntl.F_GETFL)
+            fcntl.fcntl(self._fd, fcntl.F_SETFL, self._oldflags | os.O_NONBLOCK)
+            self._done = False
+            self._input = []
+            self._cursor_position = 0
+            return self
+
+        def __exit__(self, exc_type, exc_value, traceback):
+            termios.tcsetattr(self._fd, termios.TCSAFLUSH, self._oldterm)
+            fcntl.fcntl(self._fd, fcntl.F_SETFL, self._oldflags)
+
+        @property
+        def _char(self):
+            return sys.stdin.read(1)
+
+        def read(self):
+            while not self._done:
+                try:
+                    self._handle_input()
+                except IOError:
+                    sleep(0.01)
+            return ''.join(self._input)
+
+        def _handle_input(self):
+            char = self._char
+            num = ord(char)
+            logger.debug('first ordinal: %d' % num)
+            if num == 27:
+                self._input_movement()
+            elif num == 127:
+                self._backspace()
+            else:
+                self._input_content(char)
+
+        def _input_movement(self):
+            char1, char2 = self._char, self._char
+            if not self._single:
+                logger.debug('second ordinal: %d' % ord(char1))
+                logger.debug('third ordinal: %d' % ord(char2))
+                if ord(char1) == 91:
+                    move = self._move_keys.get(ord(char2), None)
+                    if move:
+                        dir, val = move
+                        c = self._cursor_position
+                        if len(self._input) >= c + val >= 0:
+                            self._cursor_position += val
+                            self._terminal.move(dir, 1)
+
+        def _input_content(self, char):
+            self._done = char == '\n' or self._single
+            if char != '\n':
+                self._input.insert(self._cursor_position, char)
+                self._terminal.write(self._right_of_cursor)
+                self._terminal.move(left, len(self._input) -
+                                    self._cursor_position - 1)
+                self._cursor_position += 1
+
+        @property
+        def _right_of_cursor(self):
+            return ''.join(self._input[self._cursor_position:])
+
+        def _backspace(self):
+            if not self._single and self._cursor_position > 0:
+                self._terminal.move(left)
+                self._cursor_position -= 1
+                del self._input[self._cursor_position]
+                self._terminal.write(self._right_of_cursor + ' ')
+                self._terminal.move(left, len(self._input) -
+                                    self._cursor_position + 1)
+
     terminal_controller = TerminalController()
     _lines = 0
     locked = False
@@ -260,40 +345,9 @@ class Terminal(object):
         else:
             raise AttributeError(name)
 
-    def key_press(self, single=False):
-        fd = sys.stdin.fileno()
-        oldterm = termios.tcgetattr(fd)
-        newattr = termios.tcgetattr(fd)
-        newattr[3] = newattr[3] & ~termios.ICANON & ~termios.ECHO
-        termios.tcsetattr(fd, termios.TCSANOW, newattr)
-        oldflags = fcntl.fcntl(fd, fcntl.F_GETFL)
-        fcntl.fcntl(fd, fcntl.F_SETFL, oldflags | os.O_NONBLOCK)
-        done = False
-        c = None
-        input = ''
-        try:
-            while not done:
-                try:
-                    c = sys.stdin.read(1)
-                    if c != '\n':
-                        self.write(c)
-                    if single:
-                        done = True
-                        input = c
-                    else:
-                        if c == '\n':
-                            done = True
-                        else:
-                            logger.debug(c)
-                            input += c
-                except IOError:
-                    sleep(0.01)
-        except IOError as e:
-            self.write_lines(e)
-        finally:
-            termios.tcsetattr(fd, termios.TCSAFLUSH, oldterm)
-            fcntl.fcntl(fd, fcntl.F_SETFL, oldflags)
-        return input
+    def input(self, single=False):
+        with Terminal.InputReader(self, single) as input:
+            return input.read()
 
     def push(self, data):
         old = self._lines
