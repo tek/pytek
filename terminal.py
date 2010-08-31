@@ -184,9 +184,10 @@ end = 'EOL'
 
 class Terminal(object):
     class InputReader(object):
+        _directions = [None, right, left]
         _move_keys = {
-            68: [left, -1],
-            67: [right, 1]
+            68: -1,
+            67: 1
         }
         def __init__(self, terminal, single=False):
             self._terminal = terminal
@@ -233,18 +234,29 @@ class Terminal(object):
                 self._input_content(char)
 
         def _input_movement(self):
-            char1, char2 = self._char, self._char
+            char2, char3 = ord(self._char), ord(self._char)
             if not self._single:
-                logger.debug('second ordinal: %d' % ord(char1))
-                logger.debug('third ordinal: %d' % ord(char2))
-                if ord(char1) == 91:
-                    move = self._move_keys.get(ord(char2), None)
-                    if move:
-                        dir, val = move
-                        c = self._cursor_position
-                        if len(self._input) >= c + val >= 0:
-                            self._cursor_position += val
-                            self._terminal.move(dir, 1)
+                logger.debug('second ordinal: %d' % char2)
+                logger.debug('third ordinal: %d' % char3)
+                if char2 == 91:
+                    if char3 == 51:
+                        fourth = ord(self._char)
+                        if fourth == 126:
+                            self._delete()
+                        else:
+                            logger.debug('fourth ordinal: %d' % fourth)
+                    elif char3 == 70:
+                        # end
+                        self._move_cursor(1, len(self._input) -
+                                          self._cursor_position)
+                    elif char3 == 72:
+                        # home
+                        self._move_cursor(-1, self._cursor_position)
+                    elif char3 in [50, 53, 54]:
+                        fourth = ord(self._char)
+                        logger.debug('fourth ordinal: %d' % fourth)
+                    elif self._move_keys.has_key(char3):
+                        self._move_cursor(self._move_keys[char3])
 
         def _input_content(self, char):
             self._done = char == '\n' or self._single
@@ -259,14 +271,25 @@ class Terminal(object):
         def _right_of_cursor(self):
             return ''.join(self._input[self._cursor_position:])
 
-        def _backspace(self):
-            if not self._single and self._cursor_position > 0:
-                self._terminal.move(left)
-                self._cursor_position -= 1
+        def _delete(self):
+            if not self._single and self._cursor_position < len(self._input):
                 del self._input[self._cursor_position]
                 self._terminal.write(self._right_of_cursor + ' ')
                 self._terminal.move(left, len(self._input) -
                                     self._cursor_position + 1)
+
+        def _backspace(self):
+            if not self._single and self._cursor_position > 0:
+                self._terminal.move(left)
+                self._cursor_position -= 1
+                self._delete()
+
+        def _move_cursor(self, value, count=1):
+            dist = value * count
+            if len(self._input) >= self._cursor_position + dist >= 0:
+                dir = self._directions[value]
+                self._cursor_position += dist
+                self._terminal.move(dir, count)
 
     terminal_controller = TerminalController()
     _lines = 0
