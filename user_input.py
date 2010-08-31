@@ -29,12 +29,13 @@ def is_digit(arg):
     
 class UserInput(object):
     def __init__(self, text, validator=None, validate=True, newline=True,
-                 single=False):
+                 single=False, remove_text=False):
         self._text = text
         self._validator = validator
         self._do_validate = validate
         self._newline = newline
         self._single = single
+        self._remove_text = remove_text
         self.__init_attributes()
 
     def __init_attributes(self):
@@ -54,13 +55,15 @@ class UserInput(object):
         return self. _args
 
     def read(self):
-        clear = min(len(self.fail_prompt), len(self._text))
-        prompt = self._text[clear:]
+        clear = max(len(self.prompt) - len(self.fail_prompt), 0)
+        prompt = self.prompt[clear:]
         if not terminal.locked:
             terminal.lock()
-        terminal.push(self._text[:clear])
+        terminal.push(self.prompt[:clear])
         while not self._read(prompt):
             prompt = self.fail_prompt
+        if self._remove_text:
+            terminal.pop()
         if self._newline:
             terminal.write_line()
         return self.value
@@ -68,14 +71,15 @@ class UserInput(object):
     def _read(self, prompt):
         terminal.push(prompt)
         terminal.write(' ')
-        valid = self._do_input(terminal.key_press(self._single))
+        input = terminal.input(self._single)
+        valid = self._do_input(input)
         if not valid:
             terminal.pop()
         return valid
 
     def input(self, input):
         """ Synthetic input, replacing user interaction """
-        terminal.push(self.prompt)
+        terminal.push(self._text)
         if self._do_input(input):
             return self.value
         else:
@@ -90,26 +94,39 @@ class UserInput(object):
                     self._validator.match(str(self._input)))
 
     @property
+    def prompt(self):
+        return ['Enter something important:']
+
+    @property
     def fail_prompt(self):
-        # TODO
-        return ["Invalid input. Try again:"]
+        return ['Invalid input. Try again:']
 
 class SimpleChoice(UserInput):
-    def __init__(self, elements, text=['Choose one'], additional=[], *args,
-                 **kwargs):
+    def __init__(self, elements, text, additional=[], *a, **kw):
         if isinstance(text, str):
             text = [text]
         self._elements = map(str, elements)
         self._additional = map(str, additional)
         if self._elements:
             text[-1] += ' [' + '/'.join(self._elements) + ']'
-        UserInput.__init__(self, text, *args, **kwargs)
+        UserInput.__init__(self, text, *a, **kw)
 
     def _setup_validator(self):
         self._validator = regex(r'^(%s)$' % '|'.join(self._elements +
                                                self._additional))
 
-class SingleCharSimpleChoice(SimpleChoice):
+    @property
+    def prompt(self):
+        # TODO filter numbers?
+        return self._text
+
+    @property
+    def fail_prompt(self):
+        sup = UserInput.fail_prompt.fget(self)
+        # replace by property valid_inputs
+        sup[-1] += ' [%s]' % '/'.join(self._elements)
+        return sup
+
     """ Restrict input to single characters, allowing omission of
     newline for input. Fallback to conventional SimpleChoice if choices
     contain multi-char elements.
