@@ -52,7 +52,7 @@ class UserInput(object):
 
     @property
     def args(self):
-        return self. _args
+        return self._args
 
     def read(self):
         clear = max(len(self.prompt) - len(self.fail_prompt), 0)
@@ -127,6 +127,7 @@ class SimpleChoice(UserInput):
         sup[-1] += ' [%s]' % '/'.join(self._elements)
         return sup
 
+class SingleCharSimpleChoice(SimpleChoice):
     """ Restrict input to single characters, allowing omission of
     newline for input. Fallback to conventional SimpleChoice if choices
     contain multi-char elements.
@@ -146,9 +147,9 @@ class SimpleChoice(UserInput):
         return SimpleChoice._do_input(self, self._enter if self._enter and input
                                       == '\n' else input)
 
-    @property
-    def prompt(self):
-        return super(SingleCharSimpleChoice, self).prompt
+    #@property
+    #def prompt(self):
+        #pass
 
 class YesNo(SingleCharSimpleChoice):
     def __init__(self, text=['Confirm'], *args, **kwargs):
@@ -174,6 +175,22 @@ class SpecifiedChoice(SingleCharSimpleChoice):
         elements = range(1, len(elements) + 1)
         SingleCharSimpleChoice.__init__(self, elements=elements, text=text,
                                         additional=simple, *args, **kwargs)
+
+    @property
+    def prompt(self):
+        sup = SingleCharSimpleChoice.prompt.fget(self)
+        return sup
+
+    @property
+    def fail_prompt(self):
+        sup = SingleCharSimpleChoice.fail_prompt.fget(self)
+        return sup
+
+    @property
+    def valid_inputs(self):
+        # TODO not the numbers for choices
+        return self._simple
+
 
     def _is_choice_index(self, index):
         return is_digit(index) and 0 < int(index) <= len(self._choices)
