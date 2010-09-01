@@ -21,3 +21,4 @@ from .debug import *
 from .errors import MooException
 from .command_line import command_line, PrefixPrinter
 from .user_input import YesNo
+from .log import logger
