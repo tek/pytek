@@ -7,6 +7,5 @@ ${PYTHON_EXECUTABLE} -c "from distutils import sysconfig; print sysconfig.get_py
 OUTPUT_VARIABLE PYTHON_INSTDIR
 OUTPUT_STRIP_TRAILING_WHITESPACE
 )
-install(FILES __init__.py process.py config.py debug.py errors.py tools.py
-	user_input.py command_line.py terminal.py
-	DESTINATION ${PYTHON_INSTDIR}/tek)
+file(GLOB pythons RELATIVE ${CMAKE_CURRENT_SOURCE_DIR} *.py)
+install(FILES ${pythons} DESTINATION ${PYTHON_INSTDIR}/tek)
