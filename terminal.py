@@ -25,6 +25,8 @@ from time import sleep
 from dispatch import generic
 from dispatch.strategy import Signature
 
+from tek.log import logger
+
 class TerminalController(object):
     """
     A class that can be used to portably generate formatted output to
@@ -181,9 +183,119 @@ start = 'BOL'
 end = 'EOL'
 
 class Terminal(object):
+    class InputReader(object):
+        _directions = [None, right, left]
+        _move_keys = {
+            68: -1,
+            67: 1
+        }
+        def __init__(self, terminal, single=False):
+            self._terminal = terminal
+            self._single = single
+            self._fd = sys.stdin.fileno()
+
+        def __enter__(self):
+            self._oldterm = termios.tcgetattr(self._fd)
+            newattr = termios.tcgetattr(self._fd)
+            newattr[3] &= ~termios.ICANON & ~termios.ECHO
+            termios.tcsetattr(self._fd, termios.TCSANOW, newattr)
+            self._oldflags = fcntl.fcntl(self._fd, fcntl.F_GETFL)
+            fcntl.fcntl(self._fd, fcntl.F_SETFL, self._oldflags | os.O_NONBLOCK)
+            self._done = False
+            self._input = []
+            self._cursor_position = 0
+            return self
+
+        def __exit__(self, exc_type, exc_value, traceback):
+            termios.tcsetattr(self._fd, termios.TCSAFLUSH, self._oldterm)
+            fcntl.fcntl(self._fd, fcntl.F_SETFL, self._oldflags)
+
+        @property
+        def _char(self):
+            return sys.stdin.read(1)
+
+        def read(self):
+            while not self._done:
+                try:
+                    self._handle_input()
+                except IOError:
+                    sleep(0.01)
+            return ''.join(self._input)
+
+        def _handle_input(self):
+            char = self._char
+            num = ord(char)
+            logger.debug('first ordinal: %d' % num)
+            if num == 27:
+                self._input_movement()
+            elif num == 127:
+                self._backspace()
+            else:
+                self._input_content(char)
+
+        def _input_movement(self):
+            char2, char3 = ord(self._char), ord(self._char)
+            if not self._single:
+                logger.debug('second ordinal: %d' % char2)
+                logger.debug('third ordinal: %d' % char3)
+                if char2 == 91:
+                    if char3 == 51:
+                        fourth = ord(self._char)
+                        if fourth == 126:
+                            self._delete()
+                        else:
+                            logger.debug('fourth ordinal: %d' % fourth)
+                    elif char3 == 70:
+                        # end
+                        self._move_cursor(1, len(self._input) -
+                                          self._cursor_position)
+                    elif char3 == 72:
+                        # home
+                        self._move_cursor(-1, self._cursor_position)
+                    elif char3 in [50, 53, 54]:
+                        fourth = ord(self._char)
+                        logger.debug('fourth ordinal: %d' % fourth)
+                    elif self._move_keys.has_key(char3):
+                        self._move_cursor(self._move_keys[char3])
+
+        def _input_content(self, char):
+            self._done = char == '\n' or self._single
+            if char != '\n':
+                self._input.insert(self._cursor_position, char)
+                self._terminal.write(self._right_of_cursor)
+                self._terminal.move(left, len(self._input) -
+                                    self._cursor_position - 1)
+                self._cursor_position += 1
+
+        @property
+        def _right_of_cursor(self):
+            return ''.join(self._input[self._cursor_position:])
+
+        def _delete(self):
+            if not self._single and self._cursor_position < len(self._input):
+                del self._input[self._cursor_position]
+                self._terminal.write(self._right_of_cursor + ' ')
+                self._terminal.move(left, len(self._input) -
+                                    self._cursor_position + 1)
+
+        def _backspace(self):
+            if not self._single and self._cursor_position > 0:
+                self._terminal.move(left)
+                self._cursor_position -= 1
+                self._delete()
+
+        def _move_cursor(self, value, count=1):
+            dist = value * count
+            if len(self._input) >= self._cursor_position + dist >= 0:
+                dir = self._directions[value]
+                self._cursor_position += dist
+                self._terminal.move(dir, count)
+
     terminal_controller = TerminalController()
     _lines = 0
-    _locked = False
+    locked = False
+    _cols = terminal_controller.COLS
+    _stack = []
 
     def __init__(self):
         self.unlock()
@@ -197,11 +309,12 @@ class Terminal(object):
 
     def lock(self):
         Terminal._lines = 0
-        Terminal._locked = True
+        Terminal.locked = True
+        del Terminal._stack[:]
 
     def unlock(self):
         Terminal._lines = 0
-        Terminal._locked = False
+        Terminal.locked = False
 
     def write(self, string):
         self.terminal_controller.write(string)
@@ -219,7 +332,7 @@ class Terminal(object):
         lines = data.split('\n')
         if len(lines) == 1:
             line = lines[0]
-            if self._locked:
+            if self.locked:
                 Terminal._lines += 1
             self.write('\n' + line)
         else:
@@ -230,21 +343,23 @@ class Terminal(object):
         for line in data:
             self.write_lines(line)
 
-    def delete_line(self):
-        self.move(start)
-        self.write(self.tcap('CLEAR_EOL'))
-        self.move(up)
-        Terminal._lines -= 1
-
     def clear_line(self):
         """ Delete the current line, but don't move up """
         self.move(start)
         self.write(self.tcap('CLEAR_EOL'))
 
-    def clear(self):
+    def delete_lines(self, num):
         self.move(start)
-        self.move(up, self._lines)
+        self.move(up, num - 1)
         self.write(self.tcap('CLEAR_EOS'))
+        Terminal._lines -= num
+        self.move(up, 1)
+
+    def delete_line(self):
+        self.delete_lines(1)
+
+    def clear(self):
+        self.delete_lines(self._lines)
         self.lock()
 
     def __getattr__(self, name):
@@ -253,28 +368,22 @@ class Terminal(object):
         else:
             raise AttributeError(name)
 
-    def key_press(self):
-        fd = sys.stdin.fileno()
-        oldterm = termios.tcgetattr(fd)
-        newattr = termios.tcgetattr(fd)
-        newattr[3] = newattr[3] & ~termios.ICANON & ~termios.ECHO
-        termios.tcsetattr(fd, termios.TCSANOW, newattr)
-        oldflags = fcntl.fcntl(fd, fcntl.F_GETFL)
-        fcntl.fcntl(fd, fcntl.F_SETFL, oldflags | os.O_NONBLOCK)
-        done = False
-        c = None
-        try:
-            while not done:
-                try:
-                    c = sys.stdin.read(1)
-                    if c != '\n':
-                        self.write(c)
-                    done = True
-                except IOError:
-                    sleep(0.01)
-        finally:
-            termios.tcsetattr(fd, termios.TCSAFLUSH, oldterm)
-            fcntl.fcntl(fd, fcntl.F_SETFL, oldflags)
-        return c
+    def input(self, single=False):
+        with Terminal.InputReader(self, single) as input:
+            return input.read()
 
+    def push(self, data):
+        old = self._lines
+        self.write_lines(data)
+        if self.locked:
+            Terminal._stack.append(self._lines - old)
+
+    def pop(self):
+        if Terminal._stack:
+            self.delete_lines(Terminal._stack.pop())
+
+class TerminalLock(object):
+    def __init__(self):
+        self._stack = []
+ 
 terminal = Terminal()

@@ -18,6 +18,7 @@ Place, Suite 330, Boston, MA  02111-1307  USA
 from itertools import imap
 from re import compile as regex
 
+from tek.log import logger
 from tek.tools import *
 from tek.errors import InternalError, InvalidInput, MooException
 from tek.command_line import command_line
@@ -27,16 +28,14 @@ def is_digit(arg):
     return isinstance(arg, int) or (isinstance(arg, str) and arg.isdigit())
     
 class UserInput(object):
-    def __init__(self, text, validator=None, validate=True, args=False,
-                 newline=True):
-        """ @param args bool: allow space separated arguments to the input
-
-        """
+    def __init__(self, text, validator=None, validate=True, newline=True,
+                 single=False, remove_text=False):
         self._text = text
         self._validator = validator
         self._do_validate = validate
-        self._allow_args = args
         self._newline = newline
+        self._single = single
+        self._remove_text = remove_text
         self.__init_attributes()
 
     def __init_attributes(self):
@@ -53,25 +52,34 @@ class UserInput(object):
 
     @property
     def args(self):
-        return self. _args
+        return self._args
 
     def read(self):
-        prompt = self.prompt
-        if isinstance(prompt, unicode):
-            prompt = prompt.encode('utf-8')
+        clear = max(len(self.prompt) - len(self.fail_prompt), 0)
+        prompt = self.prompt[clear:]
+        if not terminal.locked:
+            terminal.lock()
+        terminal.push(self.prompt[:clear])
         while not self._read(prompt):
-            terminal.delete_line()
-            prompt = "Invalid input. Try again: "
+            prompt = self.fail_prompt
+        if self._remove_text:
+            terminal.pop()
         if self._newline:
             terminal.write_line()
         return self.value
 
     def _read(self, prompt):
-        return self._do_input(raw_input(prompt))
+        terminal.push(prompt)
+        terminal.write(' ')
+        input = terminal.input(self._single)
+        valid = self._do_input(input)
+        if not valid:
+            terminal.pop()
+        return valid
 
     def input(self, input):
         """ Synthetic input, replacing user interaction """
-        terminal.write_line(self.prompt)
+        terminal.push(self._text)
         if self._do_input(input):
             return self.value
         else:
@@ -87,48 +95,61 @@ class UserInput(object):
 
     @property
     def prompt(self):
-        return str_list(self._text, j='\n') + ' '
+        return ['Enter something important:']
+
+    @property
+    def fail_prompt(self):
+        return ['Invalid input. Try again:']
 
 class SimpleChoice(UserInput):
-    def __init__(self, elements, text=['Choose one'], additional=[], *args,
-                 **kwargs):
+    def __init__(self, elements, text, additional=[], *a, **kw):
         if isinstance(text, str):
             text = [text]
         self._elements = map(str, elements)
         self._additional = map(str, additional)
         if self._elements:
             text[-1] += ' [' + '/'.join(self._elements) + ']'
-        UserInput.__init__(self, text, *args, **kwargs)
+        UserInput.__init__(self, text, *a, **kw)
 
     def _setup_validator(self):
         self._validator = regex(r'^(%s)$' % '|'.join(self._elements +
                                                self._additional))
+
+    @property
+    def prompt(self):
+        # TODO filter numbers?
+        return self._text
+
+    @property
+    def fail_prompt(self):
+        sup = UserInput.fail_prompt.fget(self)
+        # replace by property valid_inputs
+        sup[-1] += ' [%s]' % '/'.join(self._elements)
+        return sup
 
 class SingleCharSimpleChoice(SimpleChoice):
     """ Restrict input to single characters, allowing omission of
     newline for input. Fallback to conventional SimpleChoice if choices
     contain multi-char elements.
     """
-    def __init__(self, elements, enter=None, additional=[], *args, **kwargs):
+    def __init__(self, elements, enter=None, additional=[], validate=True,
+                 *args, **kwargs):
         if enter:
             additional += ['']
         self._enter = enter
-        super(SingleCharSimpleChoice, self).__init__(elements,
-                                                     additional=additional,
-                                                     *args, **kwargs)
-        if any(len(str(e)) != 1 for e in elements) or not self._do_validate:
-            self._read = super(SingleCharSimpleChoice, self)._read
+        single = all(len(str(e)) == 1 for e in elements) and validate
+        SimpleChoice.__init__(self, elements, additional=additional,
+                              single=single, validate=validate, *args, **kwargs)
+        if not single:
             self._do_input = super(SingleCharSimpleChoice, self)._do_input
 
-    def _read(self, prompt):
-        terminal.write_lines(prompt)
-        return self._do_input(terminal.key_press())
-        
     def _do_input(self, input):
-        return super(SingleCharSimpleChoice, self)._do_input(self._enter if
-                                                             self._enter and
-                                                             input == '\n' else
-                                                             input)
+        return SimpleChoice._do_input(self, self._enter if self._enter and input
+                                      == '\n' else input)
+
+    #@property
+    #def prompt(self):
+        #pass
 
 class YesNo(SingleCharSimpleChoice):
     def __init__(self, text=['Confirm'], *args, **kwargs):
@@ -154,6 +175,22 @@ class SpecifiedChoice(SingleCharSimpleChoice):
         elements = range(1, len(elements) + 1)
         SingleCharSimpleChoice.__init__(self, elements=elements, text=text,
                                         additional=simple, *args, **kwargs)
+
+    @property
+    def prompt(self):
+        sup = SingleCharSimpleChoice.prompt.fget(self)
+        return sup
+
+    @property
+    def fail_prompt(self):
+        sup = SingleCharSimpleChoice.fail_prompt.fget(self)
+        return sup
+
+    @property
+    def valid_inputs(self):
+        # TODO not the numbers for choices
+        return self._simple
+
 
     def _is_choice_index(self, index):
         return is_digit(index) and 0 < int(index) <= len(self._choices)
