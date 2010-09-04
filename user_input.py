@@ -17,6 +17,7 @@ Place, Suite 330, Boston, MA  02111-1307  USA
 
 from itertools import imap
 from re import compile as regex
+from copy import copy
 
 from tek.log import logger
 from tek.tools import *
@@ -55,14 +56,17 @@ class UserInput(object):
         return self._args
 
     def read(self):
-        clear = max(len(self.prompt) - len(self.fail_prompt), 0)
-        prompt = self.prompt[clear:]
+        prompt = self.prompt
+        clear_count = max(len(prompt) - len(self.fail_prompt), 0)
+        lower = prompt[clear_count:]
+        upper = prompt[:clear_count]
         if not terminal.locked:
             terminal.lock()
-        terminal.push(self.prompt[:clear])
-        while not self._read(prompt):
-            prompt = self.fail_prompt
+        terminal.push(upper)
+        while not self._read(lower):
+            lower = self.fail_prompt
         if self._remove_text:
+            terminal.pop()
             terminal.pop()
         if self._newline:
             terminal.write_line()
@@ -95,21 +99,18 @@ class UserInput(object):
 
     @property
     def prompt(self):
-        return ['Enter something important:']
+        return self._text
 
     @property
     def fail_prompt(self):
         return ['Invalid input. Try again:']
 
 class SimpleChoice(UserInput):
-    def __init__(self, elements, text, additional=[], *a, **kw):
-        if isinstance(text, str):
-            text = [text]
+    def __init__(self, elements, text=[], additional=[], *a, **kw):
+        self.text = text
         self._elements = map(str, elements)
         self._additional = map(str, additional)
-        if self._elements:
-            text[-1] += ' [' + '/'.join(self._elements) + ']'
-        UserInput.__init__(self, text, *a, **kw)
+        UserInput.__init__(self, [], *a, **kw)
 
     def _setup_validator(self):
         self._validator = regex(r'^(%s)$' % '|'.join(self._elements +
@@ -117,15 +118,24 @@ class SimpleChoice(UserInput):
 
     @property
     def prompt(self):
-        # TODO filter numbers?
-        return self._text
+        text = list(self.text)
+        text[-1] += self.valid_inputs_string
+        return text
 
     @property
     def fail_prompt(self):
         sup = UserInput.fail_prompt.fget(self)
-        # replace by property valid_inputs
-        sup[-1] += ' [%s]' % '/'.join(self._elements)
+        sup[-1] += self.valid_inputs_string
         return sup
+
+    @property
+    def valid_inputs_string(self):
+        v = self.valid_inputs
+        return ' [%s]' % '/'.join(v) if v else ''
+
+    @property
+    def valid_inputs(self):
+        return self._elements
 
 class SingleCharSimpleChoice(SimpleChoice):
     """ Restrict input to single characters, allowing omission of
@@ -166,20 +176,17 @@ class SpecifiedChoice(SingleCharSimpleChoice):
     """ Automatically supply enumeration for the strings available for
     choice and query for a number.
     """
-    def __init__(self, elements, text, simple=[], *args, **kwargs):
+    def __init__(self, elements, text_pre=[], text_post=[], simple=[], *args,
+                 **kwargs):
         self._choices = elements
         self._simple = simple
         for i, v in enumerate(self._choices):
-            text.append(' [%d] %s' % (i + 1, v))
-        text.append("Enter your choice:")
-        elements = range(1, len(elements) + 1)
-        SingleCharSimpleChoice.__init__(self, elements=elements, text=text,
-                                        additional=simple, *args, **kwargs)
-
-    @property
-    def prompt(self):
-        sup = SingleCharSimpleChoice.prompt.fget(self)
-        return sup
+            text_pre.append(' [%d] %s' % (i + 1, v))
+        text_pre += text_post
+        self._numbers = range(1, len(elements) + 1)
+        SingleCharSimpleChoice.__init__(self, elements=self._numbers,
+                                        text=text_pre, additional=simple, *args,
+                                        **kwargs)
 
     @property
     def fail_prompt(self):
@@ -188,8 +195,9 @@ class SpecifiedChoice(SingleCharSimpleChoice):
 
     @property
     def valid_inputs(self):
-        # TODO not the numbers for choices
         return self._simple
+        return (e for e in SingleCharSimpleChoice.valid_inputs.fget(self) if not
+                e in self._numbers)
 
 
     def _is_choice_index(self, index):
