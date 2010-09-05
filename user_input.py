@@ -119,23 +119,23 @@ class SimpleChoice(UserInput):
     @property
     def prompt(self):
         text = list(self.text)
-        text[-1] += self.valid_inputs_string
+        text[-1] += self.input_hint_string
         return text
 
     @property
     def fail_prompt(self):
         sup = UserInput.fail_prompt.fget(self)
-        sup[-1] += self.valid_inputs_string
+        sup[-1] += self.input_hint_string
         return sup
 
     @property
-    def valid_inputs_string(self):
-        v = self.valid_inputs
+    def input_hint_string(self):
+        v = self.input_hint
         return ' [%s]' % '/'.join(v) if v else ''
 
     @property
-    def valid_inputs(self):
-        return self._elements
+    def input_hint(self):
+        return filter(lambda e: not e.isdigit(), self._elements)
 
 class SingleCharSimpleChoice(SimpleChoice):
     """ Restrict input to single characters, allowing omission of
@@ -155,11 +155,7 @@ class SingleCharSimpleChoice(SimpleChoice):
 
     def _do_input(self, input):
         return SimpleChoice._do_input(self, self._enter if self._enter and input
-                                      == '\n' else input)
-
-    #@property
-    #def prompt(self):
-        #pass
+                                      == '' else input)
 
 class YesNo(SingleCharSimpleChoice):
     def __init__(self, text=['Confirm'], *args, **kwargs):
@@ -194,11 +190,8 @@ class SpecifiedChoice(SingleCharSimpleChoice):
         return sup
 
     @property
-    def valid_inputs(self):
+    def input_hint(self):
         return self._simple
-        return (e for e in SingleCharSimpleChoice.valid_inputs.fget(self) if not
-                e in self._numbers)
-
 
     def _is_choice_index(self, index):
         return is_digit(index) and 0 < int(index) <= len(self._choices)
