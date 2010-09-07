@@ -172,17 +172,19 @@ class SpecifiedChoice(SingleCharSimpleChoice):
     """ Automatically supply enumeration for the strings available for
     choice and query for a number.
     """
-    def __init__(self, elements, text_pre=[], text_post=[], simple=[], *args,
-                 **kwargs):
+    def __init__(self, elements, text_pre=None, text_post=None, simple=None,
+                 *args, **kwargs):
         self._choices = elements
-        self._simple = simple
+        self._simple = simple or []
+        text_pre = text_pre or []
+        text_post = text_post or []
         for i, v in enumerate(self._choices):
             text_pre.append(' [%d] %s' % (i + 1, v))
         text_pre += text_post
         self._numbers = range(1, len(elements) + 1)
         SingleCharSimpleChoice.__init__(self, elements=self._numbers,
-                                        text=text_pre, additional=simple, *args,
-                                        **kwargs)
+                                        text=text_pre, additional=self._simple,
+                                        *args, **kwargs)
 
     @property
     def fail_prompt(self):
@@ -216,3 +218,8 @@ class SpecifiedChoice(SingleCharSimpleChoice):
             return i
         else:
             raise InternalError('SpecifiedChoice: strange input: ' + self._input)
+
+    @property
+    def index(self):
+        i = self._input
+        return int(i) - 1 if self._is_choice_index(i) else -1
