@@ -111,7 +111,8 @@ def moo_run(func):
         print()
         print("Interrupted by signal %d." % signum)
         exit(1)
-    signal(SIGINT, interrupt)
+    if not dodebug:
+        signal(SIGINT, interrupt)
     try:
         func()
     except AmbiguousMethod, e:
