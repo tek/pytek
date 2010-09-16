@@ -340,7 +340,6 @@ class Terminal(object):
 
     @write_lines.when(Signature(data=list) | Signature(data=tuple))
     def write_seq(self, data):
-        logger.debug(data)
         if any(isinstance(e, ColorString) for e in data):
             self.write_lines(''.join(map(str, data)))
         else:
