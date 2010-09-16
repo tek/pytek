@@ -223,3 +223,24 @@ class SpecifiedChoice(SingleCharSimpleChoice):
     def index(self):
         i = self._input
         return int(i) - 1 if self._is_choice_index(i) else -1
+
+class LoopingInput(object):
+    def __init__(self, terminate='q', overwrite=False):
+        self._terminate = terminate
+        self._overwrite = overwrite
+
+    def read(self):
+        if self._overwrite:
+            self._remove_text = True
+        while True:
+            value = super(LoopingInput, self).read()
+            if value == self._terminate:
+                break
+            self.process()
+        if self._overwrite:
+            terminal.write_lines(self.prompt)
+            terminal.write_lines()
+        return self.loop_value
+
+    def process(self):
+        pass
