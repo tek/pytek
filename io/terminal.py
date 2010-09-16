@@ -340,8 +340,12 @@ class Terminal(object):
 
     @write_lines.when(Signature(data=list) | Signature(data=tuple))
     def write_seq(self, data):
-        for line in data:
-            self.write_lines(line)
+        logger.debug(data)
+        if any(isinstance(e, ColorString) for e in data):
+            self.write_lines(''.join(map(str, data)))
+        else:
+            for line in data:
+                self.write_lines(line)
 
     def clear_line(self):
         """ Delete the current line, but don't move up """
@@ -386,4 +390,18 @@ class TerminalLock(object):
     def __init__(self):
         self._stack = []
  
+class ColorString(object):
+    """ String with formatting, preserving length. """
+    term = TerminalController()
+
+    def __init__(self, strng, format):
+        self.string = strng
+        self.format = format
+        
+    def __len__(self):
+        return len(self.string)
+
+    def __str__(self):
+        return self.format + self.string + self.term.NORMAL
+
 terminal = Terminal()

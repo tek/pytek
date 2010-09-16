@@ -27,6 +27,7 @@ except:
 
 from dispatch.interfaces import AmbiguousMethod, NoApplicableMethods
 
+from tek.log import logger
 from tek.errors import MooException
 from tek.debug import *
 

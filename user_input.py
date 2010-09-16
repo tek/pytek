@@ -23,7 +23,7 @@ from tek.log import logger
 from tek.tools import *
 from tek.errors import InternalError, InvalidInput, MooException
 from tek.command_line import command_line
-from tek.terminal import terminal
+from tek.io.terminal import terminal
 
 def is_digit(arg):
     return isinstance(arg, int) or (isinstance(arg, str) and arg.isdigit())

@@ -17,7 +17,7 @@ Place, Suite 330, Boston, MA  02111-1307  USA
 
 """
 
-from tek.terminal import TerminalController, terminal
+from tek.io.terminal import TerminalController, terminal
 from tek.tools import str_list, pretty, short
 from dispatch import generic, on
 from dispatch.strategy import Signature

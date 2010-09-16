@@ -187,7 +187,6 @@ class Configuration(object):
     def set_defaults(self, new_defaults):
         """ Add a new unique section with default values to the list of
         default options.
-
         """
         self.config_defaults.update(new_defaults)
         self.__rebuild_config()
@@ -280,9 +279,7 @@ class ConfigClient(ConfigClientBase):
         super(ConfigClient, self)._init(name)
 
     def config(self, key):
-        """ Obtain a config option's value.
-        
-        """
+        """ Obtain a config option's value. """
         if not self.connected: 
             raise ConfigClientNotYetConnectedError(self.name, key)
         return self._config[key]
@@ -312,7 +309,6 @@ class CLIConfig(object):
 class ConfigurationFactory(object):
     """ Construct Configuration objects out of a section of the given
     config files.
-    
     """
     def __init__(self, files):
         self.files = files
@@ -335,17 +331,12 @@ class Configurations(object):
     """ Program-wide register of Configuration instances.
     Connects the clients to the according Configuration, as soon as it
     has registered.
-
     """
-
     # A dict of configuration factories by an alias name
     factories = { }
-
     # A dict of Configuration instances by their section name
     configs = { }
-
     cli_config = None
-
     # A dict of lists of client instances grouped by the name of the
     # target Configuration's name
     pending_clients = { }
@@ -360,18 +351,12 @@ class Configurations(object):
         """ Add a Configuration instance to the configs dict that
         contains the specified section of the files denoted by the
         specified alias and connect waiting client instances.
-
         """
         if not cls.configs.has_key(section):
             config = cls.factories[file_alias].create(section, defaults)
-
             if cls.cli_config:
                 config.set_cli_config(cls.cli_config)
-
             cls.configs[section] = config
-
-            #debug('Configuration initialized with section \'%s\'' % section)
-
             cls.notify_clients(section)
 
     @classmethod
@@ -413,3 +398,11 @@ class Configurations(object):
         else:
             debug('Configurations.notify clients called for Configuration ' +
                   '\'%s\' which hasn\'t been added yet' % name)
+
+    @classmethod
+    def override(self, section, **defaults):
+        if self.configs.has_key(section):
+            self.configs[section].set_defaults(defaults)
+        else:
+            debug('Tried to override defaults in nonexistent section %s' %
+                  section)

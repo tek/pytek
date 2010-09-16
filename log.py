@@ -27,4 +27,3 @@ if dodebug:
 handler = logging.FileHandler(os.path.expanduser('~/.python/log'))
 
 logger.addHandler(handler)
-logger.debug('added handler')

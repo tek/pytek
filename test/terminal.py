@@ -16,7 +16,7 @@ program; if not, see <http://www.gnu.org/licenses/>.
 from unittest import TestCase
 from time import sleep
 
-from tek.terminal import *
+from tek.io.terminal import *
 
 class TerminalTest(TestCase):
     def test_progress(self):
