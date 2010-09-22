@@ -238,20 +238,15 @@ class Configuration(object):
         return name in self.sections
 
 class ConfigClientBase(object):
-    """ A class which allows remote access to a Configuration.
-
-    """
+    """ A class which allows remote access to a Configuration. """
     def _init(self, name):
-        """ Must be called from subclasses.
-        
-        """
+        """ Must be called from subclasses. """
         self.connected = False
         self.register(name)
 
     def register(self, name):
         """ Add self to the list of instances waiting for the 
         Configurable in the Configurations proxy.
-
         """
         self.name = name
         Configurations.register_client(self)
@@ -262,16 +257,13 @@ class ConfigClientBase(object):
         used by the client. Called from Configurations once the 
         Configuration is ready.
         Mark as connected, so that the config isn't switched.
-        
         """
         if not self.connected:
             self._config = config
             self.connected = True
 
 class ConfigClient(ConfigClientBase):
-    """ Standard read-only proxy for a Configuration.
-    
-    """
+    """ Standard read-only proxy for a Configuration. """
     def __init__(self, name):
         """ Connect to the Configuration called name.
         
@@ -370,7 +362,6 @@ class Configurations(object):
     def register_client(cls, client):
         """ Connect a client instance to the according Configuration
         instance, buffering the request if neccessary.
-
         """
         try: 
             client.connect(cls.configs[client.name])

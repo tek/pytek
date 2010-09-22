@@ -65,7 +65,8 @@ def make_list(*args):
     result = []
     for a in args:
         if a is not None:
-            if isinstance(a, list):
+            if (not isinstance(a, (str, unicode)) and
+                isinstance(a, collections.Sequence)):
                 result.extend(filter(lambda e: e is not None, a))
             else:
                 result.append(a)
@@ -140,9 +141,7 @@ def join_lists(l):
     return reduce(operator.add, l, [])
 
 def ijoin_lists(l):
-    """ Convert the list of lists l its elements' sums.
-
-    """
+    """ Convert the list of lists l to its elements' sums. """
     if l:
         try:
             if not all(ymap(isinstance, l, list)):
