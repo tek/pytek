@@ -24,6 +24,8 @@ logger.setLevel(logging.ERROR)
 if dodebug:
     logger.setLevel(logging.DEBUG)
 
-handler = logging.FileHandler(os.path.expanduser('~/.python/log'))
-
-logger.addHandler(handler)
+try:
+    handler = logging.FileHandler(os.path.expanduser('~/.python/log'))
+    logger.addHandler(handler)
+except IOError:
+    pass
