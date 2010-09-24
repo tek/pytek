@@ -130,7 +130,7 @@ class SimpleChoice(UserInput):
 
     @property
     def input_hint_string(self):
-        v = self.input_hint
+        v = filter(None, self.input_hint)
         return ' [%s]' % '/'.join(v) if v else ''
 
     @property
