@@ -137,6 +137,10 @@ class SimpleChoice(UserInput):
     def input_hint(self):
         return filter(lambda e: not e.isdigit(), self._elements)
 
+    def add_element(self, e):
+        self._elements.append(str(e))
+        self._setup_validator()
+
 class SingleCharSimpleChoice(SimpleChoice):
     """ Restrict input to single characters, allowing omission of
     newline for input. Fallback to conventional SimpleChoice if choices
@@ -223,6 +227,12 @@ class SpecifiedChoice(SingleCharSimpleChoice):
     def index(self):
         i = self._input
         return int(i) - 1 if self._is_choice_index(i) else -1
+
+    def add_choice(self, new):
+        self._choices.append(new)
+        num = len(self._choices)
+        self._numbers.append(num)
+        self.add_element(num)
 
 class LoopingInput(object):
     def __init__(self, terminate='q', overwrite=False):
