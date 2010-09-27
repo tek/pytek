@@ -49,7 +49,7 @@ class UserInput(object):
 
     @property
     def value(self):
-        return self._input
+        return decode(self._input)
 
     @property
     def args(self):
@@ -204,7 +204,7 @@ class SpecifiedChoice(SingleCharSimpleChoice):
 
     @property
     def value(self):
-        i = self._input
+        i = super(SpecifiedChoice, self).raw_value.fget()
         if i in self._simple:
             return i
         elif self._is_choice_index(i):
@@ -212,16 +212,18 @@ class SpecifiedChoice(SingleCharSimpleChoice):
         elif not self._do_validate:
             return i
         else:
-            raise InternalError('SpecifiedChoice: strange input: ' + self._input)
+            raise InternalError('SpecifiedChoice: strange input: ' +
+                                self._input)
 
     @property
     def raw_value(self):
-        i = self._input
+        i = super(SpecifiedChoice, self).raw_value.fget()
         if i in self._simple or self._is_choice_index(i) or not \
            self._do_validate:
             return i
         else:
-            raise InternalError('SpecifiedChoice: strange input: ' + self._input)
+            raise InternalError('SpecifiedChoice: strange input: ' +
+                                self._input)
 
     @property
     def index(self):
