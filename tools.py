@@ -169,3 +169,9 @@ def find_iter(pred, it):
 
 def listdir_abs(dirname):
     return [os.path.join(dirname, f) for f in os.listdir(dirname)]
+
+def decode(string):
+    try:
+        return unicode(string)
+    except UnicodeDecodeError:
+        return unicode(string, encoding='utf-8')
