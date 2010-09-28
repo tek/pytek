@@ -204,7 +204,7 @@ class SpecifiedChoice(SingleCharSimpleChoice):
 
     @property
     def value(self):
-        i = super(SpecifiedChoice, self).value.fget()
+        i = SingleCharSimpleChoice.value.fget(self)
         if i in self._simple:
             return i
         elif self._is_choice_index(i):
@@ -217,7 +217,7 @@ class SpecifiedChoice(SingleCharSimpleChoice):
 
     @property
     def raw_value(self):
-        i = super(SpecifiedChoice, self).raw_value.fget()
+        i = SingleCharSimpleChoice.raw_value.fget(self)
         if i in self._simple or self._is_choice_index(i) or not \
            self._do_validate:
             return i
