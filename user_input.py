@@ -26,7 +26,8 @@ from tek.command_line import command_line
 from tek.io.terminal import terminal
 
 def is_digit(arg):
-    return isinstance(arg, int) or (isinstance(arg, str) and arg.isdigit())
+    return isinstance(arg, int) or (isinstance(arg, (unicode, str)) and
+                                    arg.isdigit())
     
 class UserInput(object):
     def __init__(self, text, validator=None, validate=True, newline=True,
