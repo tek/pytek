@@ -204,7 +204,7 @@ class SpecifiedChoice(SingleCharSimpleChoice):
 
     @property
     def value(self):
-        i = super(SpecifiedChoice, self).raw_value.fget()
+        i = super(SpecifiedChoice, self).value.fget()
         if i in self._simple:
             return i
         elif self._is_choice_index(i):
