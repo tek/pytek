@@ -191,18 +191,26 @@ class SpecifiedChoice(SingleCharSimpleChoice):
     choice and query for a number.
     """
     def __init__(self, elements, text_pre=None, text_post=None, simple=None,
-                 *args, **kwargs):
+                 info=None, *args, **kwargs):
         self._choices = elements
         self._simple = simple or []
-        text_pre = text_pre or []
-        text_post = text_post or []
-        for i, v in enumerate(self._choices):
-            text_pre.append(' [%d] %s' % (i + 1, v))
-        text_pre += text_post
+        self._text_pre = text_pre or []
+        self._text_post = text_post or []
+        self._info = info or [[]] * len(elements)
         self._numbers = range(1, len(elements) + 1)
+        text = self._make_text()
         SingleCharSimpleChoice.__init__(self, elements=self._numbers,
-                                        text=text_pre, additional=self._simple,
+                                        text=text, additional=self._simple,
                                         *args, **kwargs)
+
+    def _make_text(self):
+        text = self._text_pre
+        for c in izip(self._numbers, self._choices, self._info):
+            text.append(self._format_choice(*c))
+        return text + self._text_post
+
+    def _format_choice(self, n, choice, info):
+        return [' [%d] %s' % (n, choice)] + [' ' * 5 + i for i in info]
 
     @property
     def fail_prompt(self):
