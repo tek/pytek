@@ -183,3 +183,10 @@ def decode(string):
         return unicode(string)
     except UnicodeDecodeError:
         return unicode(string, encoding='utf-8')
+
+enc = sys.getfilesystemencoding()
+
+def unicode_filename(string):
+    if not isinstance(string, unicode):
+        string = unicode(string, encoding=enc)
+    return string
