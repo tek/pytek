@@ -270,3 +270,7 @@ class LoopingInput(object):
 
     def process(self):
         pass
+
+    @property
+    def loop_value(self):
+        return None
