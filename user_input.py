@@ -17,13 +17,25 @@ Place, Suite 330, Boston, MA  02111-1307  USA
 
 from itertools import imap
 from re import compile as regex
-from copy import copy
+
+from dispatch import generic
+from dispatch.strategy import Signature
 
 from tek.log import logger
 from tek.tools import *
 from tek.errors import InternalError, InvalidInput, MooException
 from tek.command_line import command_line
 from tek.io.terminal import terminal
+
+class InputQueue(list):
+    def push(self, *input):
+        self.extend(input)
+
+    @property
+    def pop(self):
+        return list.pop(self, 0)
+
+input_queue = InputQueue()
 
 def is_digit(arg):
     return isinstance(arg, int) or (isinstance(arg, (unicode, str)) and
@@ -58,19 +70,22 @@ class UserInput(object):
 
     def read(self):
         prompt = self.prompt
-        clear_count = max(len(prompt) - len(self.fail_prompt), 0)
-        lower = prompt[clear_count:]
-        upper = prompt[:clear_count]
-        if not terminal.locked:
-            terminal.lock()
-        terminal.push(upper)
-        while not self._read(lower):
-            lower = self.fail_prompt
-        if self._remove_text:
-            terminal.pop()
-            terminal.pop()
-        if self._newline:
-            terminal.write_line()
+        if input_queue:
+            self._synth_input()
+        else:
+            clear_count = max(len(prompt) - len(self.fail_prompt), 0)
+            lower = prompt[clear_count:]
+            upper = prompt[:clear_count]
+            if not terminal.locked:
+                terminal.lock()
+            terminal.push(upper)
+            while not self._read(lower):
+                lower = self.fail_prompt
+            if self._remove_text:
+                terminal.pop()
+                terminal.pop()
+            if self._newline:
+                terminal.write_line()
         return self.value
 
     def _read(self, prompt):
@@ -82,12 +97,10 @@ class UserInput(object):
             terminal.pop()
         return valid
 
-    def input(self, input):
-        """ Synthetic input, replacing user interaction """
-        terminal.push(self._text)
-        if self._do_input(input):
-            return self.value
-        else:
+    def _synth_input(self):
+        terminal.push(self.prompt)
+        input = input_queue.pop
+        if not self._do_input(input):
             raise InvalidInput(input)
 
     def _do_input(self, input):
