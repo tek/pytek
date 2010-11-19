@@ -316,9 +316,18 @@ class Terminal(object):
         Terminal._lines = 0
         Terminal.locked = False
 
+    @generic()
     def write(self, string):
+        pass
+
+    @write.when(Signature(string=unicode))
+    def write_unicode(self, string):
+        self.write(string.encode('utf-8'))
+
+    @write.when(Signature(string=str))
+    def write_string(self, string):
         self.terminal_controller.write(string)
-        
+
     @generic()
     def write_lines(self, data=''):
         pass
@@ -341,7 +350,7 @@ class Terminal(object):
     @write_lines.when(Signature(data=list) | Signature(data=tuple))
     def write_seq(self, data):
         if any(isinstance(e, ColorString) for e in data):
-            self.write_lines(''.join(map(str, data)))
+            self.write_lines(''.join(map(unicode, data)))
         else:
             for line in data:
                 self.write_lines(line)
@@ -384,10 +393,6 @@ class Terminal(object):
     def pop(self):
         if Terminal._stack:
             self.delete_lines(Terminal._stack.pop())
-
-class TerminalLock(object):
-    def __init__(self):
-        self._stack = []
  
 class ColorString(object):
     """ String with formatting, preserving length. """
@@ -402,5 +407,8 @@ class ColorString(object):
 
     def __str__(self):
         return self.format + self.string + self.term.NORMAL
+
+    def ljust(self, *a, **kw):
+        return ColorString(self.string.ljust(*a, **kw), self.format)
 
 terminal = Terminal()
