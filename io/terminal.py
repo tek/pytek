@@ -398,15 +398,16 @@ class Terminal(object):
         with Terminal.InputReader(self, single) as input:
             return input.read()
 
-    def push(self, data):
+    def push(self, data=''):
         old = self._lines
         self.write_lines(data)
         if self.locked:
             Terminal._stack.append(self._lines - old)
 
-    def pop(self):
+    def pop(self, count=1):
         if Terminal._stack:
-            self.delete_lines(Terminal._stack.pop())
+            for i in xrange(count):
+                self.delete_lines(Terminal._stack.pop())
  
 class ColorString(object):
     """ String with formatting, preserving length. """
