@@ -119,7 +119,7 @@ class UserInput(object):
         return ['Invalid input. Try again:']
 
 class SimpleChoice(UserInput):
-    def __init__(self, elements, text=[], additional=[], *a, **kw):
+    def __init__(self, elements, text=[''], additional=[], *a, **kw):
         self.text = text
         self._elements = map(str, elements)
         self._additional = map(str, additional)
@@ -167,8 +167,6 @@ class SingleCharSimpleChoice(SimpleChoice):
         single = all(len(str(e)) == 1 for e in elements) and validate
         SimpleChoice.__init__(self, elements, additional=additional,
                               single=single, validate=validate, *args, **kwargs)
-        if not single:
-            self._do_input = super(SingleCharSimpleChoice, self)._do_input
 
     def _do_input(self, input):
         return SimpleChoice._do_input(self, self._enter if self._enter and input
