@@ -82,10 +82,9 @@ class UserInput(object):
             while not self._read(lower):
                 lower = self.fail_prompt
             if self._remove_text:
-                terminal.pop()
-                terminal.pop()
+                terminal.pop(2)
             if self._newline:
-                terminal.write_line()
+                terminal.push()
         return self.value
 
     def _read(self, prompt):
@@ -272,8 +271,8 @@ class LoopingInput(object):
                 break
             self.process()
         if self._overwrite:
-            terminal.write_lines(self.prompt)
-            terminal.write_lines()
+            terminal.push(self.prompt)
+            terminal.push()
         return self.loop_value
 
     def process(self):
