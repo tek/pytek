@@ -329,31 +329,45 @@ class Terminal(object):
         self.terminal_controller.write(string)
 
     @generic()
-    def write_lines(self, data=''):
+    def write_lines(self, data='', check_length=True):
         pass
 
     @write_lines.when(Signature(data=unicode))
-    def write_unicode_line(self, data=unicode('')):
-        self.write_lines(data.encode('utf-8'))
+    def write_unicode_line(self, data=unicode(''), check_length=True):
+        self.write_lines(data.encode('utf-8'), check_length=check_length)
 
     @write_lines.when(Signature(data=str))
-    def write_line(self, data=''):
+    def write_string_line(self, data='', check_length=True):
         lines = data.split('\n')
         if len(lines) == 1:
-            line = lines[0]
-            if self.locked:
-                Terminal._lines += 1
-            self.write('\n' + line)
+            self.write_line(lines[0], check_length=check_length)
         else:
-            self.write_lines(lines)
+            self.write_lines(lines, check_length=check_length)
 
     @write_lines.when(Signature(data=list) | Signature(data=tuple))
-    def write_seq(self, data):
+    def write_seq(self, data, check_length=True):
         if any(isinstance(e, ColorString) for e in data):
-            self.write_lines(''.join(map(unicode, data)))
+            self.write_color_strings(data)
         else:
             for line in data:
-                self.write_lines(line)
+                self.write_lines(line, check_length=check_length)
+
+    def write_line(self, data='', check_length=True):
+        if check_length and len(data) > self._cols:
+            self.write_lines([data[:self._cols], data[self._cols:]],
+                             check_length=check_length)
+        else:
+            if self.locked:
+                Terminal._lines += 1
+            self.write('\n' + data)
+
+    def write_color_strings(self, data):
+        total_len = sum(map(len, data))
+        if total_len > self._cols:
+            self.write_lines(break_color_string_list(data, self._cols),
+                             check_length=False)
+        else:
+            self.write_lines(''.join(map(unicode, data)), check_length=False)
 
     def clear_line(self):
         """ Delete the current line, but don't move up """
@@ -410,5 +424,30 @@ class ColorString(object):
 
     def ljust(self, *a, **kw):
         return ColorString(self.string.ljust(*a, **kw), self.format)
+
+    def split(self, length):
+        return (ColorString(self.string[:length], self.format),
+                ColorString(self.string[length:], self.format))
+
+def split_string(s, length):
+    if isinstance(s, ColorString):
+        return s.split(length)
+    else:
+        return s[:length], s[length:]
+
+def break_color_string_list(data, cols):
+    lines = []
+    current = ''
+    width = 0
+    for s in data:
+        while width + len(s) > cols:
+            prefix, s = split_string(s, cols - width)
+            lines.append(current + str(prefix))
+            current = ''
+            width = 0
+        current += str(s)
+        width += len(s)
+    lines.append(current)
+    return lines
 
 terminal = Terminal()
