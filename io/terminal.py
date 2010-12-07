@@ -296,6 +296,7 @@ class Terminal(object):
     locked = False
     _cols = terminal_controller.COLS
     _stack = []
+    _has_cols = _cols is not None
 
     def __init__(self):
         self.unlock()
@@ -329,31 +330,31 @@ class Terminal(object):
         self.terminal_controller.write(string)
 
     @generic()
-    def write_lines(self, data='', check_length=True):
+    def write_lines(self, data='', **kw):
         pass
 
     @write_lines.when(Signature(data=unicode))
-    def write_unicode_line(self, data=unicode(''), check_length=True):
-        self.write_lines(data.encode('utf-8'), check_length=check_length)
+    def write_lines_unicode(self, data=unicode(''), **kw):
+        self.write_lines(data.encode('utf-8'), **kw)
 
     @write_lines.when(Signature(data=str))
-    def write_string_line(self, data='', check_length=True):
+    def write_lines_string(self, data='', **kw):
         lines = data.split('\n')
         if len(lines) == 1:
-            self.write_line(lines[0], check_length=check_length)
+            self.write_line(lines[0], **kw)
         else:
-            self.write_lines(lines, check_length=check_length)
+            self.write_lines(lines, **kw)
 
     @write_lines.when(Signature(data=list) | Signature(data=tuple))
-    def write_seq(self, data, check_length=True):
+    def write_lines_seq(self, data, **kw):
         if any(isinstance(e, ColorString) for e in data):
             self.write_color_strings(data)
         else:
             for line in data:
-                self.write_lines(line, check_length=check_length)
+                self.write_lines(line, **kw)
 
     def write_line(self, data='', check_length=True):
-        if check_length and len(data) > self._cols:
+        if self._has_cols and check_length and len(data) > self._cols:
             self.write_lines([data[:self._cols], data[self._cols:]],
                              check_length=check_length)
         else:
@@ -363,7 +364,7 @@ class Terminal(object):
 
     def write_color_strings(self, data):
         total_len = sum(map(len, data))
-        if total_len > self._cols:
+        if self._has_cols and total_len > self._cols:
             self.write_lines(break_color_string_list(data, self._cols),
                              check_length=False)
         else:
@@ -398,15 +399,15 @@ class Terminal(object):
         with Terminal.InputReader(self, single) as input:
             return input.read()
 
-    def push(self, data=''):
+    def push(self, data='', **kw):
         old = self._lines
-        self.write_lines(data)
+        self.write_lines(data, **kw)
         if self.locked:
             Terminal._stack.append(self._lines - old)
 
     def pop(self, count=1):
-        if Terminal._stack:
-            for i in xrange(count):
+        for i in xrange(count):
+            if Terminal._stack:
                 self.delete_lines(Terminal._stack.pop())
  
 class ColorString(object):
