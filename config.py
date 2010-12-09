@@ -3,8 +3,8 @@ from os import environ, path
 from ConfigParser import SafeConfigParser, NoSectionError
 from optparse import Values
 
-from tek.debug import debug
 from tek.errors import *
+from tek.log import logger
 
 def boolify(value):
     """ Return a string's boolean value if it is a string and "true" or
@@ -17,17 +17,17 @@ def boolify(value):
     else: return value
 
 class TypedConfigObject(object):
-    """ This is intended to automagically create objects from a string read from a config file, if desired.
-        if a TypedConfigObject is put into a ConfigDict, setting a value is passed to the set() method, which
-        then creates an object from the parameter from the config.
+    """ This is intended to automagically create objects from a string
+    read from a config file, if desired. If a TypedConfigObject is put
+    into a ConfigDict, setting a value is passed to the set() method,
+    which then creates an object from the parameter from the config.
     """
-
     def __init__(self, value_type, defaultvalue):
         """ Construct a TypedConfigObject.
-
-            @param value_type: The type used to create new instances of the config value.
-
-            @param defaultvalue: The initial value, which this object is set to
+            @param value_type: The type used to create new instances of
+            the config value.  
+            @param defaultvalue: The initial value, which this object is
+            set to
             @type defaultvalue: value_type
 
         """
@@ -43,7 +43,7 @@ class TypedConfigObject(object):
         """
         if isinstance(args, tuple):
             if len(args) != 1: 
-                debug('TypedConfigObject: len > 1')
+                logger.debug('TypedConfigObject: len > 1')
                 self.value = self.value_type(*args)
                 return
             else: args = args[0] 
@@ -76,13 +76,13 @@ class BoolConfigObject(TypedConfigObject):
         super(BoolConfigObject, self).set(boolify(arg))
 
 class ConfigDict(dict):
-    """ Dictionary, that respects TypedConfigObjects when getting or
+    """ Dictionary that respects TypedConfigObjects when getting or
     setting.
-    
     """
     def getitem(self, key):
         """ special method that is used in Configuration objects.
-            Return the content of the TypedConfigObject wrapper, if it is present
+        Return the content of the TypedConfigObject wrapper, if it is
+        present.
         """
         value = self[key]
         if isinstance(value, TypedConfigObject): value = value.value
@@ -111,9 +111,7 @@ class ConfigDict(dict):
                 super(ConfigDict, self).__setitem__(key, value)
 
     def update(self, newdict):
-        """ Convenience overload.
-        
-        """
+        """ Convenience overload. """
         for key, value in dict(newdict).iteritems(): self[key] = value
 
 class Configuration(object):
@@ -130,12 +128,10 @@ class Configuration(object):
     Different section names can be used for groups of options from the
     register_config call, which correspond to the section names from the
     files.
-    
     """
     def __init__(self, defaults):
         """ Initialize the dicts used to store the config and the list
         of section names that are added for defaults.
-        
         """
         self.config_defaults  = ConfigDict()
         self.config_from_file = dict()
@@ -144,9 +140,7 @@ class Configuration(object):
         self.set_defaults(defaults)
 
     def __getitem__(self, key):
-        """ Emulate read-only container behaviour.
-        
-        """
+        """ Emulate read-only container behaviour. """
         if not self.config.has_key(key):
             raise NoSuchOptionError(key)
         return self.config.getitem(key)
@@ -155,16 +149,12 @@ class Configuration(object):
         return str(self.config)
 
     def has_key(self, key):
-        """ Emulate read-only container behaviour.
-        
-        """
+        """ Emulate read-only container behaviour. """
         return self.config.has_key(key)
 
     @property
     def info(self):
-        """ Return the contents of all sources.
-        
-        """
+        """ Return the contents of all sources. """
         s = 'Defaults: %s\nCLI: %s\nFiles: %s' % (str(self.config_defaults),
                                                   str(self.config_from_cli),
                                                   str(self.config_from_file))
@@ -177,7 +167,6 @@ class Configuration(object):
         The defaults and file config sections are iterated in the 
         order of the additions of the defaults.
         To be called after new values are added.
-        
         """
         self.config = ConfigDict()
         self.config.update(self.config_defaults)
@@ -193,13 +182,11 @@ class Configuration(object):
 
     def set_cli_config(self, values):
         """ Set the config values read from command line invocation.
-
             @param values: Obtained from an instance of OptionParser.
             Its __dict__ contains all of the possible command line 
             options. If an option hasn't been supplied, it is None, and
             thus not considered here.
             @type values: optparse.Values
-
         """
         self.config_from_cli.update([key, value] for key, value in 
                                     values.__dict__.iteritems() 
@@ -210,7 +197,6 @@ class Configuration(object):
     def set_file_config(self, file_config):
         """ Add the values obtained from the files as a ConfigDict
         object and rebuild the main config.
-        
         """
         self.config_from_file = ConfigDict()
         self.config_from_file.update(file_config)
@@ -219,7 +205,6 @@ class Configuration(object):
     def config_from_section(self, section, key):
         """ Obtain the value that key has in the specific section,
         in the order file->default.
-        
         """
         if not self.has_section(section):
             raise NoSuchSectionError(section)
@@ -232,9 +217,7 @@ class Configuration(object):
             return self.config_defaults[section][key]
 
     def has_section(self, name):
-        """ Return True if a section with name has been added.
-        
-        """
+        """ Return True if a section with name has been added. """
         return name in self.sections
 
 class ConfigClientBase(object):
@@ -316,7 +299,7 @@ class ConfigurationFactory(object):
             file_config = dict(self.config_parser.items(section))
             config.set_file_config(file_config)
         except NoSectionError, e: 
-            debug('ConfigParser: ' + str(e))
+            logger.debug('ConfigParser: ' + str(e))
         return config
 
 class Configurations(object):
@@ -387,13 +370,14 @@ class Configurations(object):
                     client.connect(cls.configs[name])
                 del cls.pending_clients[name]
         else:
-            debug('Configurations.notify clients called for Configuration ' +
-                  '\'%s\' which hasn\'t been added yet' % name)
+            logger.debug('Configurations.notify clients called for'
+                         ' Configuration \'%s\' which hasn\'t been added yet' %
+                         name)
 
     @classmethod
     def override(self, section, **defaults):
         if self.configs.has_key(section):
             self.configs[section].set_defaults(defaults)
         else:
-            debug('Tried to override defaults in nonexistent section %s' %
-                  section)
+            logger.debug('Tried to override defaults in nonexistent section %s'
+                         % section)
