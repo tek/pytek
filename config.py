@@ -381,3 +381,28 @@ class Configurations(object):
         else:
             logger.debug('Tried to override defaults in nonexistent section %s'
                          % section)
+
+    @classmethod
+    def parse_cli(self, positional=None):
+        from argparse import ArgumentParser
+        parser = ArgumentParser()
+        arg = ''
+        params = {}
+        if positional is not None:
+            parser.add_argument(positional[0], nargs=positional[1])
+        def add():
+            parser.add_argument(arg, **params)
+        for config in self.configs.itervalues():
+            for name, value in config.config.iteritems():
+                arg = '--%s' % name
+                params = {'default': None}
+                if isinstance(value, BoolConfigObject):
+                    params['action'] = 'store_true'
+                    add()
+                    arg = '--no-%s' % name
+                    params['action'] = 'store_false'
+                    params['dest'] = name
+                elif isinstance(value, TypedConfigObject):
+                    params['type'] = value.value_type
+                add()
+        self.set_cli_config(parser.parse_args())
