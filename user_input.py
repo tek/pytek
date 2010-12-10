@@ -267,7 +267,6 @@ class LoopingInput(object):
         self._remove_text |= self._overwrite
         while True:
             value = super(LoopingInput, self).read()
-            logger.debug(value)
             if value == self._terminate:
                 break
             elif self._dispatch.has_key(value):
