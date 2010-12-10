@@ -26,15 +26,6 @@ except:
     cumsum = lambda s: reduce(lambda a, b: a + [a[-1] + b], s[1:], s[:1])
 
 from tek.log import logger
-
-try:
-    from itertools import compress
-    logger.debug('Update to 2.7 in tek.tools.py')
-except ImportError:
-    def compress(data, selectors):
-        # compress('ABCDEF', [1,0,1,0,1,1]) --> A C E F
-        return (d for d, s in izip(data, selectors) if s)
-
 from tek.errors import MooException
 from tek.debug import *
 
@@ -158,3 +149,12 @@ def unicode_filename(string):
     if not isinstance(string, unicode):
         string = unicode(string, encoding=enc)
     return string
+
+def extremum_len(fun, *seqs):
+    return fun(map(len, seqs))
+
+def minlen(*seqs):
+    return extremum_len(min, *seqs)
+
+def maxlen(*seqs):
+    return extremum_len(max, *seqs)
