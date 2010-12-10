@@ -164,8 +164,6 @@ class SingleCharSimpleChoice(SimpleChoice):
         if enter:
             additional += ['']
         self._enter = enter
-        logger.debug(elements)
-        logger.debug(additional)
         single = (all(len(str(e)) <= 1 for e in elements + additional) and
                   validate)
         SimpleChoice.__init__(self, elements, additional=additional,
