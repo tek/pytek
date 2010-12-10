@@ -164,7 +164,8 @@ class SingleCharSimpleChoice(SimpleChoice):
         if enter:
             additional += ['']
         self._enter = enter
-        single = all(len(str(e)) == 1 for e in elements) and validate
+        single = (all(len(str(e)) == 1 for e in elements + additional) and
+                  validate)
         SimpleChoice.__init__(self, elements, additional=additional,
                               single=single, validate=validate, *args, **kwargs)
 
@@ -236,7 +237,7 @@ class SpecifiedChoice(SingleCharSimpleChoice):
 
     @property
     def raw_value(self):
-        i = SingleCharSimpleChoice.raw_value.fget(self)
+        i = SingleCharSimpleChoice.value.fget(self)
         if i in self._simple or self._is_choice_index(i) or not \
            self._do_validate:
             return i
