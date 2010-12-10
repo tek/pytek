@@ -182,7 +182,7 @@ class YesNo(SingleCharSimpleChoice):
         return self._input == 'y'
 
     def __nonzero__(self):
-        return self.value
+        return bool(self.value)
 
 class SpecifiedChoice(SingleCharSimpleChoice):
     """ Automatically supply enumeration for the strings available for
@@ -257,18 +257,24 @@ class SpecifiedChoice(SingleCharSimpleChoice):
         self.add_element(num)
 
 class LoopingInput(object):
-    def __init__(self, terminate='q', overwrite=False):
+    def __init__(self, terminate='q', overwrite=False, dispatch=[]):
         self._terminate = terminate
         self._overwrite = overwrite
+        self._dispatch = dict(dispatch)
+        self._force_terminate = False
 
     def read(self):
-        if self._overwrite:
-            self._remove_text = True
+        self._remove_text |= self._overwrite
         while True:
             value = super(LoopingInput, self).read()
+            logger.debug(value)
             if value == self._terminate:
                 break
+            elif self._dispatch.has_key(value):
+                self._dispatch[value]()
             self.process()
+            if self._force_terminate:
+                break
         if self._overwrite:
             terminal.push(self.prompt)
             terminal.push()
