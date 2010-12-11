@@ -339,7 +339,7 @@ class Terminal(object):
 
     @write_lines.when(Signature(data=str))
     def write_lines_string(self, data='', **kw):
-        lines = data.split('\n')
+        lines = data.splitlines() if data else ['']
         if len(lines) == 1:
             self.write_line(lines[0], **kw)
         else:

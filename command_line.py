@@ -69,7 +69,7 @@ class CommandLine(object):
 
     @print_.when(Signature())
     def print_(self, msg):
-        map(self.print_line, unicode(msg).split('\n'))
+        map(self.print_line, unicode(msg).splitlines())
 
     def print_line(self, line):
         if isinstance(line, unicode):
