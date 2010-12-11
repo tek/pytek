@@ -285,3 +285,7 @@ class LoopingInput(object):
     @property
     def loop_value(self):
         return None
+
+def confirm(message, remove_text=False):
+    message = [unicode(message)] + ['Press return to continue.']
+    SingleCharSimpleChoice([''], text=message, remove_text=remove_text).read()
