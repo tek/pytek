@@ -10,3 +10,4 @@ OUTPUT_STRIP_TRAILING_WHITESPACE
 file(GLOB pythons RELATIVE ${CMAKE_CURRENT_SOURCE_DIR} *.py)
 install(FILES ${pythons} DESTINATION ${PYTHON_INSTDIR}/tek)
 add_subdirectory(io)
+add_subdirectory(util)
