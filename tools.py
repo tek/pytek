@@ -20,6 +20,8 @@ Place, Suite 330, Boston, MA  02111-1307  USA
 import sys, collections, operator, os
 from itertools import *
 
+from tek.log import logger
+
 try:
     from numpy import cumsum
 except:
@@ -35,7 +37,6 @@ except ImportError:
 
 from dispatch.interfaces import AmbiguousMethod, NoApplicableMethods
 
-from tek.log import logger
 from tek.errors import MooException
 from tek.debug import *
 
