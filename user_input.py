@@ -15,6 +15,7 @@ Place, Suite 330, Boston, MA  02111-1307  USA
 
 """
 
+import time
 from itertools import imap
 from re import compile as regex
 
@@ -28,11 +29,15 @@ from tek.command_line import command_line
 from tek.io.terminal import terminal
 
 class InputQueue(list):
+    delay = None
+
     def push(self, *input):
         self.extend(input)
 
     @property
     def pop(self):
+        if self.delay is not None:
+            time.sleep(self.delay)
         return list.pop(self, 0)
 
 input_queue = InputQueue()
