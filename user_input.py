@@ -28,6 +28,9 @@ from tek.errors import InternalError, InvalidInput, MooException
 from tek.command_line import command_line
 from tek.io.terminal import terminal
 
+class UserInputTerminated(MooException):
+    pass
+
 class InputQueue(list):
     delay = None
 
@@ -262,10 +265,12 @@ class SpecifiedChoice(SingleCharSimpleChoice):
         self.add_element(num)
 
 class LoopingInput(object):
-    def __init__(self, terminate='q', overwrite=False, dispatch=[]):
+    def __init__(self, terminate='q', overwrite=False, dispatch=[],
+                 raise_quit=False):
         self._terminate = terminate
         self._overwrite = overwrite
         self._dispatch = dict(dispatch)
+        self._raise_quit = raise_quit
         self._force_terminate = False
 
     def read(self):
@@ -273,7 +278,10 @@ class LoopingInput(object):
         while True:
             value = super(LoopingInput, self).read()
             if value == self._terminate:
-                break
+                if self._raise_quit:
+                    raise UserInputTerminated()
+                else:
+                    break
             elif self._dispatch.has_key(value):
                 self._dispatch[value]()
             self.process()
