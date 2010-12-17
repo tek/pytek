@@ -444,6 +444,9 @@ class ColorString(object):
     def __str__(self):
         return self.format + self.string + self.term.NORMAL
 
+    def __repr__(self):
+        return '%s("%s")' % (self.__class__.__name__, self.string)
+
     def ljust(self, *a, **kw):
         return ColorString(self.string.ljust(*a, **kw), self.format)
 
