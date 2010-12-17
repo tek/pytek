@@ -51,7 +51,7 @@ def is_digit(arg):
     
 class UserInput(object):
     def __init__(self, text, validator=None, validate=True, newline=True,
-                 single=False, remove_text=False):
+                 single=False, remove_text=False, **kw):
         self._text = text
         self._validator = validator
         self._do_validate = validate
@@ -278,9 +278,6 @@ class LoopingInput(object):
         while True:
             value = super(LoopingInput, self).read()
             if value == self._terminate:
-                if self._raise_quit:
-                    raise UserInputTerminated()
-                else:
                     break
             elif self._dispatch.has_key(value):
                 self._dispatch[value]()
@@ -290,7 +287,10 @@ class LoopingInput(object):
         if self._overwrite:
             terminal.push(self.prompt)
             terminal.push()
-        return self.loop_value
+        if self._raise_quit:
+            raise UserInputTerminated()
+        else:
+            return self.loop_value
 
     def process(self):
         pass
