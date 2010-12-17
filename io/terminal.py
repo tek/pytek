@@ -296,6 +296,7 @@ class Terminal(object):
     locked = False
     _cols = terminal_controller.COLS
     _stack = []
+    _locks = []
     _has_cols = _cols is not None
 
     def __init__(self):
@@ -316,6 +317,20 @@ class Terminal(object):
     def unlock(self):
         Terminal._lines = 0
         Terminal.locked = False
+        if Terminal._locks:
+            del Terminal._locks[:]
+
+    def push_lock(self):
+        if not self.locked:
+            self.lock()
+        Terminal._locks.append(0)
+
+    def pop_lock(self):
+        if Terminal._locks:
+            self.pop(Terminal._locks[-1])
+            Terminal._locks.pop()
+            if not Terminal._locks:
+                self.unlock()
 
     @generic()
     def write(self, string):
@@ -376,11 +391,12 @@ class Terminal(object):
         self.write(self.tcap('CLEAR_EOL'))
 
     def delete_lines(self, num):
-        self.move(start)
-        self.move(up, num - 1)
-        self.write(self.tcap('CLEAR_EOS'))
-        Terminal._lines -= num
-        self.move(up, 1)
+        if num > 0:
+            self.move(start)
+            self.move(up, num - 1)
+            self.write(self.tcap('CLEAR_EOS'))
+            Terminal._lines -= num
+            self.move(up, 1)
 
     def delete_line(self):
         self.delete_lines(1)
@@ -402,13 +418,17 @@ class Terminal(object):
     def push(self, data='', **kw):
         old = self._lines
         self.write_lines(data, **kw)
-        if self.locked:
+        if Terminal.locked:
             Terminal._stack.append(self._lines - old)
+            if Terminal._locks:
+                Terminal._locks[-1] += 1
 
     def pop(self, count=1):
         for i in xrange(count):
             if Terminal._stack:
                 self.delete_lines(Terminal._stack.pop())
+        if Terminal._locks:
+            Terminal._locks[-1] -= count
  
 class ColorString(object):
     """ String with formatting, preserving length. """
