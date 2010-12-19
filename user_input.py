@@ -273,8 +273,8 @@ class SpecifiedChoice(SingleCharSimpleChoice):
         self.add_element(num)
 
 class LoopingInput(object):
-    def __init__(self, terminate='q', overwrite=False, dispatch=[],
-                 raise_quit=False):
+    def __init__(self, terminate='q', overwrite=True, dispatch=[],
+                 raise_quit=False, **kw):
         self._terminate = terminate
         self._overwrite = overwrite
         self._dispatch = dict(dispatch)
