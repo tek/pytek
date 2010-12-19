@@ -91,11 +91,13 @@ class UserInput(object):
             upper = prompt[:clear_count]
             if not terminal.locked:
                 terminal.lock()
+            if self._remove_text:
+                terminal.push_lock()
             terminal.push(upper)
             while not self._read(lower):
                 lower = self.fail_prompt
             if self._remove_text:
-                terminal.pop(2)
+                terminal.pop_lock()
             if self._newline:
                 terminal.push()
         return self.value
