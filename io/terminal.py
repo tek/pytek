@@ -383,7 +383,7 @@ class Terminal(object):
             self.write_lines(break_color_string_list(data, self._cols),
                              check_length=False)
         else:
-            self.write_lines(''.join(map(unicode, data)), check_length=False)
+            self.write_lines(u''.join(map(unicode, data)), check_length=False)
 
     def clear_line(self):
         """ Delete the current line, but don't move up """
@@ -443,6 +443,9 @@ class ColorString(object):
 
     def __str__(self):
         return self.format + self.string + self.term.NORMAL
+
+    def __unicode__(self):
+        return unicode(self.format) + unicode(self.string) + self.term.NORMAL
 
     def __repr__(self):
         return '%s("%s")' % (self.__class__.__name__, self.string)
