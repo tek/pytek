@@ -33,6 +33,7 @@ class UserInputTerminated(MooException):
 
 class InputQueue(list):
     delay = None
+    force_output = False
 
     def push(self, *input):
         self.extend(input)
@@ -42,6 +43,10 @@ class InputQueue(list):
         if self.delay is not None:
             time.sleep(self.delay)
         return list.pop(self, 0)
+
+    @property
+    def suppress_output(self):
+        return bool(self) and not self.force_output
 
 input_queue = InputQueue()
 
@@ -105,7 +110,8 @@ class UserInput(object):
         return valid
 
     def _synth_input(self):
-        terminal.push(self.prompt)
+        if not input_queue.suppress_output:
+            terminal.push(self.prompt)
         input = input_queue.pop
         if not self._do_input(input):
             raise InvalidInput(input)
@@ -284,7 +290,7 @@ class LoopingInput(object):
             self.process()
             if self._force_terminate:
                 break
-        if self._overwrite:
+        if self._overwrite and not input_queue.suppress_output:
             terminal.push(self.prompt)
             terminal.push()
         if self._raise_quit:
