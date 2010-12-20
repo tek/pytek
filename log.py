@@ -19,13 +19,13 @@ import logging, os
 from .debug import *
 
 logger = logging.getLogger('tek')
-logger.setLevel(logging.ERROR)
-
+logger.setLevel(logging.WARN)
 if dodebug:
     logger.setLevel(logging.DEBUG)
-
 try:
     handler = logging.FileHandler(os.path.expanduser('~/.python/log'))
     logger.addHandler(handler)
+    if dodebug:
+        handler.setLevel(logging.DEBUG)
 except IOError:
     pass
