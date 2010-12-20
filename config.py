@@ -394,15 +394,16 @@ class Configurations(object):
             parser.add_argument(arg, **params)
         for config in self.configs.itervalues():
             for name, value in config.config.iteritems():
-                arg = '--%s' % name
-                params = {'default': None}
-                if isinstance(value, BoolConfigObject):
-                    params['action'] = 'store_true'
+                if positional is None or name != positional[0]:
+                    arg = '--%s' % name
+                    params = {'default': None}
+                    if isinstance(value, BoolConfigObject):
+                        params['action'] = 'store_true'
+                        add()
+                        arg = '--no-%s' % name
+                        params['action'] = 'store_false'
+                        params['dest'] = name
+                    elif isinstance(value, TypedConfigObject):
+                        params['type'] = value.value_type
                     add()
-                    arg = '--no-%s' % name
-                    params['action'] = 'store_false'
-                    params['dest'] = name
-                elif isinstance(value, TypedConfigObject):
-                    params['type'] = value.value_type
-                add()
         self.set_cli_config(parser.parse_args())
