@@ -126,7 +126,7 @@ def ijoin_lists(l):
             for i in cumsum([0] + map(len, l[:-1])):
                 l[i:i+1] = l[i]
         except Exception, e:
-            debug('ijoin_lists failed with: ' + str(e))
+            logger.debug('ijoin_lists failed with: ' + str(e))
     return l
 
 def pairs(list1, list2):
