@@ -393,24 +393,28 @@ class Configurations(object):
     def parse_cli(self, positional=None):
         from argparse import ArgumentParser
         parser = ArgumentParser()
-        arg = ''
+        arg = ['']
         params = {}
         if positional is not None:
             parser.add_argument(positional[0], nargs=positional[1])
         def add():
-            parser.add_argument(arg, **params)
+            parser.add_argument(*arg, **params)
         for config in self._configs.itervalues():
             for name, value in config.config.iteritems():
                 if positional is None or name != positional[0]:
-                    arg = '--%s' % name
+                    arg = ['--%s' % name]
+                    if self._cli_short_options.has_key(name):
+                        arg.append('-%s' % self._cli_short_options[name])
                     params = {'default': None}
                     if isinstance(value, BoolConfigObject):
                         params['action'] = 'store_true'
                         add()
-                        arg = '--no-%s' % name
+                        arg = ['--no-%s' % name]
                         params['action'] = 'store_false'
                         params['dest'] = name
-                    elif isinstance(value, TypedConfigObject):
-                        params['type'] = value.value_type
                     add()
         self.set_cli_config(parser.parse_args())
+
+    @classmethod
+    def set_cli_short_options(self, **options):
+        self._cli_short_options.update(options)
