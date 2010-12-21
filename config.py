@@ -68,6 +68,18 @@ class BoolConfigObject(TypedConfigObject):
         """ Transform arg into a bool value and pass it to super. """
         super(BoolConfigObject, self).set(boolify(arg))
 
+class ListConfigObject(TypedConfigObject):
+    def __init__(self, defaultvalue=None, splitchar=','):
+        if defaultvalue is None:
+            defaultvalue = []
+        self._splitchar = splitchar
+        TypedConfigObject.__init__(self, list, defaultvalue)
+
+    def set(self, value):
+        if isinstance(value, (str, unicode)):
+            value = value.split(self._splitchar)
+        self.value = value
+
 class ConfigDict(dict):
     """ Dictionary that respects TypedConfigObjects when getting or
     setting.
