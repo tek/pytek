@@ -10,10 +10,10 @@ def boolify(value):
     """ Return a string's boolean value if it is a string and "true" or
     "false"(case insensitive), else just return the object.
     """
-    if isinstance(value, str) and len(value) > 3 and \
-       (value.lower() == 'true' or value.lower() == 'false'):
+    try:
         return value.lower() == 'true'
-    else: return value
+    except:
+        return bool(value)
 
 class TypedConfigObject(object):
     """ This is intended to automagically create objects from a string
