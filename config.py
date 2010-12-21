@@ -9,7 +9,6 @@ from tek.log import logger
 def boolify(value):
     """ Return a string's boolean value if it is a string and "true" or
     "false"(case insensitive), else just return the object.
-    
     """
     if isinstance(value, str) and len(value) > 3 and \
        (value.lower() == 'true' or value.lower() == 'false'):
@@ -39,7 +38,6 @@ class TypedConfigObject(object):
         If args is not of the value_type of the config object, it is
         passed to value_type.__init__. args may be a tuple of 
         parameters.
-        
         """
         if isinstance(args, tuple):
             if len(args) != 1: 
@@ -61,18 +59,13 @@ class TypedConfigObject(object):
 class BoolConfigObject(TypedConfigObject):
     """ Specialization of TypedConfigObject for booleans, as they must
     be parsed from strings differently.
-    
     """
     def __init__(self, defaultvalue=False):
-        """ Set the value_type to bool.
-        
-        """
+        """ Set the value_type to bool. """
         super(BoolConfigObject, self).__init__(bool, defaultvalue)
 
     def set(self, arg):
-        """ Transform arg into a bool value and pass it to super.
-        
-        """
+        """ Transform arg into a bool value and pass it to super. """
         super(BoolConfigObject, self).set(boolify(arg))
 
 class ConfigDict(dict):
@@ -91,9 +84,9 @@ class ConfigDict(dict):
     def __setitem__(self, key, value):
         """ TypedConfigObject instances get special treatment:
             If one would be overwritten, call its set() method instead.
-            If the new value also is a TypedConfigObject, pass its value to set().
+            If the new value also is a TypedConfigObject, pass its value
+            to set().
             If the key is new, try to create a TypedConfigObject.
-
         """
         if not self.has_key(key):
             if isinstance(value, str) or isinstance(value, TypedConfigObject):
