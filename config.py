@@ -308,18 +308,20 @@ class Configurations(object):
     has registered.
     """
     # A dict of configuration factories by an alias name
-    factories = { }
+    _factories = { }
     # A dict of Configuration instances by their section name
-    configs = { }
-    cli_config = None
+    _configs = { }
+    _cli_config = None
+    # A mapping of config keys to -x cli short option characters
+    _cli_short_options = { }
     # A dict of lists of client instances grouped by the name of the
     # target Configuration's name
-    pending_clients = { }
+    _pending_clients = { }
 
     @classmethod
     def register_files(cls, alias, *files):
-        if not cls.factories.has_key(alias):
-            cls.factories[alias] = ConfigurationFactory(files)
+        if not cls._factories.has_key(alias):
+            cls._factories[alias] = ConfigurationFactory(files)
 
     @classmethod
     def register_config(cls, file_alias, section, **defaults):
@@ -327,17 +329,17 @@ class Configurations(object):
         contains the specified section of the files denoted by the
         specified alias and connect waiting client instances.
         """
-        if not cls.configs.has_key(section):
-            config = cls.factories[file_alias].create(section, defaults)
-            if cls.cli_config:
-                config.set_cli_config(cls.cli_config)
-            cls.configs[section] = config
+        if not cls._configs.has_key(section):
+            config = cls._factories[file_alias].create(section, defaults)
+            if cls._cli_config:
+                config.set_cli_config(cls._cli_config)
+            cls._configs[section] = config
             cls.notify_clients(section)
 
     @classmethod
     def set_cli_config(cls, values):
-        cls.cli_config = values
-        for config in cls.configs.values():
+        cls._cli_config = values
+        for config in cls._configs.values():
             config.set_cli_config(values)
         cls.notify_all_clients()
 
@@ -347,15 +349,15 @@ class Configurations(object):
         instance, buffering the request if neccessary.
         """
         try: 
-            client.connect(cls.configs[client.name])
+            client.connect(cls._configs[client.name])
         except KeyError:
-            if not cls.pending_clients.has_key(client.name):
-                cls.pending_clients[client.name] = [ ]
-            cls.pending_clients[client.name].append(client)
+            if not cls._pending_clients.has_key(client.name):
+                cls._pending_clients[client.name] = [ ]
+            cls._pending_clients[client.name].append(client)
 
     @classmethod
     def notify_all_clients(cls):
-        for name in cls.pending_clients.keys():
+        for name in cls._pending_clients.keys():
             cls.notify_clients(name)
 
     @classmethod
@@ -364,11 +366,11 @@ class Configurations(object):
         registered before their target and clear the client dict item.
 
         """
-        if cls.configs.has_key(name):
-            if cls.pending_clients.has_key(name):
-                for client in cls.pending_clients[name]: 
-                    client.connect(cls.configs[name])
-                del cls.pending_clients[name]
+        if cls._configs.has_key(name):
+            if cls._pending_clients.has_key(name):
+                for client in cls._pending_clients[name]: 
+                    client.connect(cls._configs[name])
+                del cls._pending_clients[name]
         else:
             logger.debug('Configurations.notify clients called for'
                          ' Configuration \'%s\' which hasn\'t been added yet' %
@@ -376,8 +378,8 @@ class Configurations(object):
 
     @classmethod
     def override(self, section, **defaults):
-        if self.configs.has_key(section):
-            self.configs[section].set_defaults(defaults)
+        if self._configs.has_key(section):
+            self._configs[section].set_defaults(defaults)
         else:
             logger.debug('Tried to override defaults in nonexistent section %s'
                          % section)
@@ -392,7 +394,7 @@ class Configurations(object):
             parser.add_argument(positional[0], nargs=positional[1])
         def add():
             parser.add_argument(arg, **params)
-        for config in self.configs.itervalues():
+        for config in self._configs.itervalues():
             for name, value in config.config.iteritems():
                 if positional is None or name != positional[0]:
                     arg = '--%s' % name
