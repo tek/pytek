@@ -319,6 +319,7 @@ class Configurations(object):
     _cli_config = None
     # A mapping of config keys to -x cli short option characters
     _cli_short_options = { }
+    _cli_params = { }
     # A dict of lists of client instances grouped by the name of the
     # target Configuration's name
     _pending_clients = { }
@@ -403,12 +404,15 @@ class Configurations(object):
             for name, value in config.config.iteritems():
                 if positional is None or name != positional[0]:
                     arg = ['--%s' % name]
+                    params = {'default': None}
                     if self._cli_short_options.has_key(name):
                         arg.append('-%s' % self._cli_short_options[name])
-                    params = {'default': None}
+                    if self._cli_params.has_key(name):
+                        params.update(self._cli_params[name])
                     if isinstance(value, BoolConfigObject):
                         params['action'] = 'store_true'
                         add()
+                        params = {'default': None}
                         arg = ['--no-%s' % name]
                         params['action'] = 'store_false'
                         params['dest'] = name
@@ -418,3 +422,9 @@ class Configurations(object):
     @classmethod
     def set_cli_short_options(self, **options):
         self._cli_short_options.update(options)
+
+    @classmethod
+    def set_cli_params(self, name, *short, **params):
+        if short:
+            self.set_cli_short_options(dict([[name, short[0]]]))
+        self._cli_params[name] = params
