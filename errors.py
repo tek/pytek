@@ -16,7 +16,8 @@ Place, Suite 330, Boston, MA  02111-1307  USA
 """
 
 class MooException(Exception):
-    pass
+    def __init__(self, msg=''):
+        Exception.__init__(self, unicode(msg))
 
 class NoOverloadError(NotImplementedError):
     def __init__(self, function, obj):
