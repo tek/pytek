@@ -428,3 +428,10 @@ class Configurations(object):
         if short:
             self.set_cli_short_options(dict([[name, short[0]]]))
         self._cli_params[name] = params
+
+    @classmethod
+    def clear(self):
+        self._configs = {}
+        self._cli_config = None
+        self._pending_clients = {}
+        self._factories = {}
