@@ -18,6 +18,7 @@ from signal import signal, SIGINT, SIG_IGN
 
 from dispatch.interfaces import AmbiguousMethod, NoApplicableMethods
 
+from tek import logger
 from tek.command_line import command_line
 from tek.errors import MooException
 from tek.tools import str_list
@@ -49,6 +50,6 @@ def moo_run(func):
         if dodebug:
             raise
     except MooException, e:
-        command_line(e)
+        logger.error(e)
         if dodebug:
             raise
