@@ -110,6 +110,7 @@ def recursive_printer(name, arg):
 
 pretty = lambda a: recursive_printer('pretty', a)
 short = lambda a: recursive_printer('short', a)
+formatted = lambda a: recursive_printer('formatted', a)
 
 def filter_index(l, index):
     return [l[i] for i in index]
