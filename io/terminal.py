@@ -465,12 +465,12 @@ def split_string(s, length):
 
 def break_color_string_list(data, cols):
     lines = []
-    current = ''
+    current = u''
     width = 0
     for s in data:
         while width + len(s) > cols:
             prefix, s = split_string(s, cols - width)
-            lines.append(current + str(prefix))
+            lines.append(current + unicode(prefix))
             current = ''
             width = 0
         current += str(s)
