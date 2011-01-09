@@ -14,12 +14,15 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, see <http://www.gnu.org/licenses/>.
 """
 
-import logging, os
+import logging, os, sys
 
 from .debug import *
 
 logger = logging.getLogger('tek')
-logger.setLevel(logging.WARN)
+logger.setLevel(logging.INFO)
+stdouthandler = logging.StreamHandler(sys.stdout)
+stdouthandler.setLevel(logging.INFO)
+logger.addHandler(stdouthandler)
 if dodebug:
     logger.setLevel(logging.DEBUG)
 try:
