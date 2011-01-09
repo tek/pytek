@@ -101,7 +101,9 @@ class ConfigDict(dict):
             If the key is new, try to create a TypedConfigObject.
         """
         if not self.has_key(key):
-            if isinstance(value, str) or isinstance(value, TypedConfigObject):
+            if (isinstance(value, (str, unicode)) or
+                isinstance(value, TypedConfigObject)
+                or value is None):
                 pass
             elif isinstance(value, bool):
                 value = BoolConfigObject(value)
