@@ -306,7 +306,7 @@ class ConfigurationFactory(object):
             file_config = dict(self.config_parser.items(section))
             config.set_file_config(file_config)
         except NoSectionError, e: 
-            logger.debug('ConfigParser: ' + str(e))
+            logger.log(5, 'ConfigParser: ' + str(e))
         return config
 
 class Configurations(object):
