@@ -16,7 +16,7 @@ along with this program; if not, see <http://www.gnu.org/licenses/>.
 
 import logging, os, sys
 
-from .debug import *
+from .util.debug import dodebug
 
 logger = logging.getLogger('tek')
 logger.setLevel(logging.INFO)

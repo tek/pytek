@@ -18,11 +18,10 @@ from signal import signal, SIGINT, SIG_IGN
 
 from dispatch.interfaces import AmbiguousMethod, NoApplicableMethods
 
-from tek import logger
+from tek import debug, dodebug
 from tek.command_line import command_line
 from tek.errors import MooException
 from tek.tools import str_list
-from tek.debug import dodebug
 
 def moo_run(func):
     def interrupt(signum, frame):

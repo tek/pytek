@@ -15,10 +15,10 @@ Place, Suite 330, Boston, MA  02111-1307  USA
 
 """
 
+from .util.debug import dodebug
+from .log import logger, debug
 from .process import process, process_output
-from .config import Configurations, CLIConfig, ConfigClient
-from .debug import *
 from .errors import MooException
 from .command_line import command_line, PrefixPrinter
 from .user_input import YesNo
-from .log import logger
+from .config import Configurations, CLIConfig, ConfigClient
