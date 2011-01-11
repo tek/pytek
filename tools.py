@@ -20,7 +20,7 @@ Place, Suite 330, Boston, MA  02111-1307  USA
 import sys, collections, operator, os
 from itertools import *
 
-from tek.log import logger
+from tek.log import logger, debug
 
 try:
     from numpy import cumsum
@@ -37,7 +37,6 @@ except ImportError:
 from dispatch.interfaces import AmbiguousMethod, NoApplicableMethods
 
 from tek.errors import MooException
-from tek.debug import *
 
 def zip_fill(default, *seqs):
     # TODO itertools.zip_longest
@@ -127,7 +126,7 @@ def ijoin_lists(l):
             for i in cumsum([0] + map(len, l[:-1])):
                 l[i:i+1] = l[i]
         except Exception, e:
-            logger.debug('ijoin_lists failed with: ' + str(e))
+            debug('ijoin_lists failed with: ' + str(e))
     return l
 
 def pairs(list1, list2):

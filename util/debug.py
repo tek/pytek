@@ -16,4 +16,6 @@ along with this program; if not, see <http://www.gnu.org/licenses/>.
 
 from os import environ
 
+__all__ = ['debug']
+
 dodebug = environ.has_key("PYTHONDEBUG")
