@@ -17,10 +17,10 @@ Place, Suite 330, Boston, MA  02111-1307  USA
 
 """
 
-import sys, collections, operator, os
+import sys, collections, operator, os, logging
 from itertools import *
 
-from tek.log import logger, debug
+from tek.log import logger, stdouthandler, debug
 
 try:
     from numpy import cumsum
@@ -49,9 +49,11 @@ class Silencer(object):
     """
     def __enter__(self):
         sys.stdout = self
+        stdouthandler.setLevel(logging.CRITICAL)
 
     def __exit__(self, exc_type, exc_val, exc_tb):
         sys.stdout = sys.__stdout__
+        stdouthandler.setLevel(logging.INFO)
 
     def write(self, data):
         pass
