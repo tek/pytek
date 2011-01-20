@@ -1,4 +1,4 @@
-__copyright__ = """ Copyright (c) 2010 Torsten Schmits
+__copyright__ = """ Copyright (c) 2010-2011 Torsten Schmits
 
 This program is free software; you can redistribute it and/or modify it
 under the terms of the GNU General Public License as published by the
@@ -18,8 +18,7 @@ from signal import signal, SIGINT, SIG_IGN
 
 from dispatch.interfaces import AmbiguousMethod, NoApplicableMethods
 
-from tek import debug, dodebug
-from tek.command_line import command_line
+from tek import dodebug, logger
 from tek.errors import MooException
 from tek.tools import str_list
 
