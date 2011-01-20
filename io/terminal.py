@@ -473,7 +473,7 @@ def break_color_string_list(data, cols):
             lines.append(current + unicode(prefix))
             current = ''
             width = 0
-        current += str(s)
+        current += unicode(s)
         width += len(s)
     lines.append(current)
     return lines
