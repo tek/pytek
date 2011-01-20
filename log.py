@@ -1,4 +1,4 @@
-__copyright__ = """ Copyright (c) 2010 Torsten Schmits
+__copyright__ = """ Copyright (c) 2010-2011 Torsten Schmits
 
 This program is free software; you can redistribute it and/or modify it
 under the terms of the GNU General Public License as published by the
@@ -39,6 +39,7 @@ try:
     handler = logging.FileHandler(os.path.expanduser('~/.python/debug'))
     debug_logger.addHandler(handler)
     handler.setLevel(logging.DEBUG)
+    debug_logger.debug('========= START =========')
 except IOError:
     pass
 debug = debug_logger.debug
