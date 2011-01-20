@@ -1,4 +1,4 @@
-__copyright__ = """ Copyright (c) 2010 Torsten Schmits
+__copyright__ = """ Copyright (c) 2010-2011 Torsten Schmits
 
 This program is free software; you can redistribute it and/or modify it
 under the terms of the GNU General Public License as published by the
@@ -14,7 +14,7 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, see <http://www.gnu.org/licenses/>.
 """
 
-import re, unittest
+import unittest
 
 from tek import debug, logger
 from tek.util.module import submodules
@@ -29,10 +29,10 @@ def test_cases(pkg_name, include_tests={}, exclude_tests={}):
             for test in suite._tests:
                 cname = test.__class__.__name__
                 mname = test._testMethodName
-                cmname = '{0}.{1}'.format(cname, mname)
                 if not ((include_tests and
-                     (not include_tests.has_key(cname) or
-                      not mname in include_tests[cname]))
+                         (not include_tests.has_key(cname) or
+                          (include_tests[cname] and
+                           not mname in include_tests[cname])))
                 or (exclude_tests.has_key(cname) and
                     (not exclude_tests[cname] or
                      (mname in exclude_tests[cname])))):
