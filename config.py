@@ -76,7 +76,7 @@ class ListConfigObject(TypedConfigObject):
         TypedConfigObject.__init__(self, list, defaultvalue)
 
     def set(self, value):
-        if isinstance(value, (str, unicode)):
+        if isinstance(value, basestring):
             value = value.split(self._splitchar)
         self.value = value
 
@@ -101,7 +101,7 @@ class ConfigDict(dict):
             If the key is new, try to create a TypedConfigObject.
         """
         if not self.has_key(key):
-            if (isinstance(value, (str, unicode)) or
+            if (isinstance(value, basestring) or
                 isinstance(value, TypedConfigObject)
                 or value is None):
                 pass

@@ -1,6 +1,6 @@
 from __future__ import print_function
 
-__copyright__ = """ Copyright (c) 2009 Torsten Schmits
+__copyright__ = """ Copyright (c) 2009-2011 Torsten Schmits
 
 This file is part of pytek. pytek is free software;
 you can redistribute it and/or modify it under the terms of the GNU General
@@ -20,7 +20,7 @@ Place, Suite 330, Boston, MA  02111-1307  USA
 import sys, collections, operator, os, logging
 from itertools import *
 
-from tek.log import logger, stdouthandler, debug
+from tek.log import stdouthandler, debug
 
 try:
     from numpy import cumsum
@@ -33,8 +33,6 @@ except ImportError:
     def compress(data, selectors):
         # compress('ABCDEF', [1,0,1,0,1,1]) --> A C E F
         return (d for d, s in izip(data, selectors) if s)
-
-from dispatch.interfaces import AmbiguousMethod, NoApplicableMethods
 
 from tek.errors import MooException
 
@@ -74,7 +72,7 @@ def make_list(*args):
     result = []
     for a in args:
         if a is not None:
-            if (not isinstance(a, (str, unicode)) and
+            if (not isinstance(a, basestring) and
                 isinstance(a, collections.Sequence)):
                 result.extend(filter(lambda e: e is not None, a))
             else:
@@ -84,10 +82,10 @@ def make_list(*args):
 def camelcaseify(name):
     return ''.join([n.capitalize() for n in name.split('_')])
 
-is_seq = lambda x: not isinstance(x, (str, unicode)) and \
+is_seq = lambda x: not isinstance(x, basestring) and \
                    (isinstance(x, collections.Sequence) or
                     hasattr(x, '__iter__'))
-must_repeat = lambda x: isinstance(x, (str, unicode, type)) or \
+must_repeat = lambda x: isinstance(x, (basestring, type)) or \
                         hasattr(x, 'ymap_repeat')
 must_not_repeat = lambda x: isinstance(x, repeat) or is_seq(x) or \
                             hasattr(x, '__len__')
