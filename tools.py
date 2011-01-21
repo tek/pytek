@@ -168,3 +168,7 @@ def minlen(*seqs):
 
 def maxlen(*seqs):
     return extremum_len(max, *seqs)
+
+def filterfalse_keys(pred, mydict):
+    newkeys = ifilterfalse(pred, mydict)
+    return dict([[k, mydict[k]] for k in newkeys])
