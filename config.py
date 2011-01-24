@@ -129,9 +129,10 @@ class Configuration(object):
       Configurations.register_files
     - The command line options, passed by a CLIConfig object through
       Configurations.set_cli_config
+    - Values set by Configurations.override, mainly for testing purposes
     It can be used from ConfigClient subclasses or instances to
     obtain the value to a config key, where the precedence is
-    cli->files->defaults.
+    overridden->cli->files->defaults.
     Different section names can be used for groups of options from the
     register_config call, which correspond to the section names from the
     files.
@@ -143,6 +144,7 @@ class Configuration(object):
         self.config_defaults  = ConfigDict()
         self.config_from_file = dict()
         self.config_from_cli  = ConfigDict()
+        self.overridden       = ConfigDict()
         self.config           = ConfigDict()
         self.set_defaults(defaults)
 
@@ -179,6 +181,7 @@ class Configuration(object):
         self.config.update(self.config_defaults)
         self.config.update(self.config_from_file)
         self.config.update(self.config_from_cli)
+        self.config.update(self.overridden)
 
     def set_defaults(self, new_defaults):
         """ Add a new unique section with default values to the list of
@@ -207,6 +210,10 @@ class Configuration(object):
         """
         self.config_from_file = ConfigDict()
         self.config_from_file.update(file_config)
+        self.__rebuild_config()
+
+    def override(self, **values):
+        self.overridden.update(values)
         self.__rebuild_config()
 
     def config_from_section(self, section, key):
@@ -385,11 +392,19 @@ class Configurations(object):
                          name)
 
     @classmethod
-    def override(self, section, **defaults):
+    def override_defaults(self, section, **defaults):
         if self._configs.has_key(section):
             self._configs[section].set_defaults(defaults)
         else:
             logger.debug('Tried to override defaults in nonexistent section %s'
+                         % section)
+
+    @classmethod
+    def override(self, section, **values):
+        if self._configs.has_key(section):
+            self._configs[section].override(**values)
+        else:
+            logger.debug('Tried to override values in nonexistent section %s'
                          % section)
 
     @classmethod
