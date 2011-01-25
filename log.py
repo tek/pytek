@@ -25,7 +25,7 @@ stdouthandler.setLevel(logging.INFO)
 logger.addHandler(stdouthandler)
 if dodebug:
     logger.setLevel(logging.DEBUG)
-if os.environ['TEK_PYTHON_FILE_LOGGING']:
+if os.environ.has_key('TEK_PYTHON_FILE_LOGGING'):
     try:
         handler = logging.FileHandler(os.path.expanduser('~/.python/log'))
         logger.addHandler(handler)
@@ -34,7 +34,7 @@ if os.environ['TEK_PYTHON_FILE_LOGGING']:
     except IOError:
         pass
 
-if os.environ['TEK_PYTHON_DEBUG_LOGGING']:
+if os.environ.has_key('TEK_PYTHON_DEBUG_LOGGING'):
     debug_logger = logging.getLogger('tek-debug')
     debug_logger.setLevel(logging.DEBUG)
     try:
@@ -45,3 +45,5 @@ if os.environ['TEK_PYTHON_DEBUG_LOGGING']:
     except IOError:
         pass
     debug = debug_logger.debug
+else:
+    debug = lambda *a, **kw: True

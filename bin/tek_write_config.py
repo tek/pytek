@@ -17,7 +17,8 @@ along with this program; if not, see <http://www.gnu.org/licenses/>.
 """
 
 if __name__ == '__main__':
-    import os, sys
+    import os, sys, pkgutil
+    from tek import debug
     from tek.config import Configurations
     from tek.util.module import submodules
     assert(len(sys.argv) == 3)
@@ -30,15 +31,19 @@ if __name__ == '__main__':
     dirs = filter(os.path.isdir, os.listdir(sys.argv[1]))
     for dir in dirs:
         try:
-            try:
-                sub = submodules(dir)
-            except:
-                continue
-            for mod in sub:
-                if mod.__name__.endswith('.config'):
-                    if hasattr(mod, 'reset_config'):
-                        mod.reset_config(register_files=False,
-                                         reset_parent=False)
-        except (ImportError, ValueError):
-            pass
+            debug(dir)
+            tip = dir.rsplit('.')[-1]
+            pkg = __import__(dir, fromlist=tip)
+            for loader, name, is_pkg in pkgutil.iter_modules(pkg.__path__):
+                try:
+                    if name == 'config':
+                        mod = __import__('{0}.{1}'.format(dir, name),
+                                         fromlist=name)
+                        if hasattr(mod, 'reset_config'):
+                            mod.reset_config(register_files=False,
+                                            reset_parent=False)
+                except Exception as e:
+                    debug(e)
+        except (ImportError, ValueError) as e:
+            debug(e)
     Configurations.write_config(sys.argv[2])
