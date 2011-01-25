@@ -30,7 +30,11 @@ if __name__ == '__main__':
     dirs = filter(os.path.isdir, os.listdir(sys.argv[1]))
     for dir in dirs:
         try:
-            for mod in submodules(dir):
+            try:
+                sub = submodules(dir)
+            except:
+                continue
+            for mod in sub:
                 if mod.__name__.endswith('.config'):
                     if hasattr(mod, 'reset_config'):
                         mod.reset_config(register_files=False,
