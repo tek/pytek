@@ -182,13 +182,20 @@ class Configuration(object):
         self.config.update(self.config_from_cli)
         self.config.update(self.overridden)
 
+    def config_update(f):
+        def wrap(self, *a, **kw):
+            f(self, *a, **kw)
+            self.__rebuild_config()
+        return wrap
+
+    @config_update
     def set_defaults(self, new_defaults):
         """ Add a new unique section with default values to the list of
         default options.
         """
         self.config_defaults.update(new_defaults)
-        self.__rebuild_config()
 
+    @config_update
     def set_cli_config(self, values):
         """ Set the config values read from command line invocation.
             @param values: Obtained from an instance of OptionParser.
@@ -201,19 +208,18 @@ class Configuration(object):
                                     values.__dict__.iteritems() 
                                     if value is not None and
                                     self.config_defaults.has_key(key))
-        self.__rebuild_config()
 
+    @config_update
     def set_file_config(self, file_config):
         """ Add the values obtained from the files as a ConfigDict
         object and rebuild the main config.
         """
         self.config_from_file = ConfigDict()
         self.config_from_file.update(file_config)
-        self.__rebuild_config()
 
+    @config_update
     def override(self, **values):
         self.overridden.update(values)
-        self.__rebuild_config()
 
     def config_from_section(self, section, key):
         """ Obtain the value that key has in the specific section,
