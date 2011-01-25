@@ -364,6 +364,8 @@ class Configurations(object):
                 config.set_cli_config(cls._cli_config)
             cls._configs[section] = config
             cls.notify_clients(section)
+        else:
+            cls._configs[section].set_defaults(defaults)
 
     @classmethod
     def set_cli_config(cls, values):

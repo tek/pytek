@@ -25,21 +25,23 @@ stdouthandler.setLevel(logging.INFO)
 logger.addHandler(stdouthandler)
 if dodebug:
     logger.setLevel(logging.DEBUG)
-try:
-    handler = logging.FileHandler(os.path.expanduser('~/.python/log'))
-    logger.addHandler(handler)
-    if dodebug:
-        handler.setLevel(logging.DEBUG)
-except IOError:
-    pass
+if os.environ['TEK_PYTHON_FILE_LOGGING']:
+    try:
+        handler = logging.FileHandler(os.path.expanduser('~/.python/log'))
+        logger.addHandler(handler)
+        if dodebug:
+            handler.setLevel(logging.DEBUG)
+    except IOError:
+        pass
 
-debug_logger = logging.getLogger('tek-debug')
-debug_logger.setLevel(logging.DEBUG)
-try:
-    handler = logging.FileHandler(os.path.expanduser('~/.python/debug'))
-    debug_logger.addHandler(handler)
-    handler.setLevel(logging.DEBUG)
-    debug_logger.debug('========= START =========')
-except IOError:
-    pass
-debug = debug_logger.debug
+if os.environ['TEK_PYTHON_DEBUG_LOGGING']:
+    debug_logger = logging.getLogger('tek-debug')
+    debug_logger.setLevel(logging.DEBUG)
+    try:
+        handler = logging.FileHandler(os.path.expanduser('~/.python/debug'))
+        debug_logger.addHandler(handler)
+        handler.setLevel(logging.DEBUG)
+        debug_logger.debug('========= START =========')
+    except IOError:
+        pass
+    debug = debug_logger.debug
