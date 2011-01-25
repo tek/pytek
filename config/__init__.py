@@ -311,8 +311,9 @@ class ConfigurationFactory(object):
     """ Construct Configuration objects out of a section of the given
     config files.
     """
-    def __init__(self, files):
+    def __init__(self, files, allow_files=True):
         self.files = files
+        self._allow_files = allow_files
         self.read_config()
 
     def read_config(self):
@@ -321,11 +322,12 @@ class ConfigurationFactory(object):
 
     def create(self, section, defaults):
         config = Configuration(defaults)
-        try:
-            file_config = dict(self.config_parser.items(section))
-            config.set_file_config(file_config)
-        except NoSectionError, e: 
-            logger.log(5, 'ConfigParser: ' + str(e))
+        if self._allow_files:
+            try:
+                file_config = dict(self.config_parser.items(section))
+                config.set_file_config(file_config)
+            except NoSectionError, e: 
+                logger.debug('ConfigParser: ' + str(e))
         return config
 
 class Configurations(object):
@@ -346,11 +348,13 @@ class Configurations(object):
     _pending_clients = {}
     # classes that have attributes set from configurable decorator
     _configurables = set()
+    # read config from file system
+    allow_files = True
 
     @classmethod
     def register_files(cls, alias, *files):
         if not cls._factories.has_key(alias):
-            cls._factories[alias] = ConfigurationFactory(files)
+            cls._factories[alias] = ConfigurationFactory(files, cls.allow_files)
 
     @classmethod
     def register_config(cls, file_alias, section, **defaults):

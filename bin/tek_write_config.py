@@ -17,10 +17,11 @@ along with this program; if not, see <http://www.gnu.org/licenses/>.
 """
 
 if __name__ == '__main__':
-    import os, pkgutil, sys
+    import os, sys
     from tek.config import Configurations
     from tek.util.module import submodules
     assert(len(sys.argv) == 3)
+    Configurations.allow_files = False
     try:
         from config import reset_config
         reset_config(register_files=False, reset_parent=False)
