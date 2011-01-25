@@ -464,4 +464,4 @@ def configurable(prefix=False, **sections):
         return c
     return dec
 
-__all__ = ['ConfigError', 'ConfigClient', 'Configurations', 'Configurable']
+__all__ = ['ConfigError', 'ConfigClient', 'Configurations', 'configurable']
