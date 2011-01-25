@@ -1,10 +1,9 @@
 from __future__ import absolute_import
-from os import environ, path
 from ConfigParser import SafeConfigParser, NoSectionError
 from optparse import Values
 
-from tek.errors import *
-from tek.log import logger
+from tek.config.errors import *
+from tek import logger, debug
 
 def boolify(value):
     """ Return a string's boolean value if it is a string and "true" or
@@ -234,42 +233,24 @@ class Configuration(object):
         """ Return True if a section with name has been added. """
         return name in self.sections
 
-class ConfigClientBase(object):
-    """ A class which allows remote access to a Configuration. """
-    def _init(self, name):
-        """ Must be called from subclasses. """
+class ConfigClient(object):
+    """ Standard read-only proxy for a Configuration. """
+    def __init__(self, name):
+        """ Connect to the Configuration called name. """
         self.connected = False
-        self.register(name)
+        self._config = None
+        self.__register(name)
 
-    def register(self, name):
+    def __register(self, name):
         """ Add self to the list of instances waiting for the 
-        Configurable in the Configurations proxy.
+        Configuration in the Configurations proxy.
         """
         self.name = name
         Configurations.register_client(self)
-        return self
-
-    def connect(self, config):
-        """ Reference the Configuration instance as the config to be
-        used by the client. Called from Configurations once the 
-        Configuration is ready.
-        Mark as connected, so that the config isn't switched.
-        """
-        if not self.connected:
-            self._config = config
-            self.connected = True
-
-class ConfigClient(ConfigClientBase):
-    """ Standard read-only proxy for a Configuration. """
-    def __init__(self, name):
-        """ Connect to the Configuration called name.
-        
-        """
-        super(ConfigClient, self)._init(name)
 
     def config(self, key):
         """ Obtain a config option's value. """
-        if not self.connected: 
+        if self._config is None:
             raise ConfigClientNotYetConnectedError(self.name, key)
         return self._config[key]
 
@@ -277,23 +258,16 @@ class ConfigClient(ConfigClientBase):
         return self.config(key)
 
     def print_all(self):
-        print self._config.info
+        debug(self._config.info)
 
-class CLIConfig(object):
-    """ Proxy for setting the command line arguments as config values.
-    
-    """
-    def __init__(self, values=None):
-        self.set_cli_config(values)
-    
-    def set_cli_config(self, values):
-        """ If present, set the values attribute and transfer them.
-        
+    def connect(self, config):
+        """ Reference the Configuration instance as the config to be
+        used by the client. Called from Configurations once the 
+        Configuration is ready.
+        Mark as connected, so that the config isn't switched.
         """
-        if values is not None:
-            assert(isinstance(values, Values))
-            self.values = values
-            Configurations.set_cli_config(self.values)
+        if self._config is None:
+            self._config = config
 
 class ConfigurationFactory(object):
     """ Construct Configuration objects out of a section of the given
@@ -322,16 +296,18 @@ class Configurations(object):
     has registered.
     """
     # A dict of configuration factories by an alias name
-    _factories = { }
+    _factories = {}
     # A dict of Configuration instances by their section name
-    _configs = { }
+    _configs = {}
     _cli_config = None
     # A mapping of config keys to -x cli short option characters
-    _cli_short_options = { }
-    _cli_params = { }
+    _cli_short_options = {}
+    _cli_params = {}
     # A dict of lists of client instances grouped by the name of the
     # target Configuration's name
-    _pending_clients = { }
+    _pending_clients = {}
+    # classes that have attributes set from configurable decorator
+    _configurables = set()
 
     @classmethod
     def register_files(cls, alias, *files):
@@ -452,3 +428,40 @@ class Configurations(object):
         self._cli_config = None
         self._pending_clients = {}
         self._factories = {}
+        for cls in self._configurables:
+            if hasattr(cls, '__conf_init__'):
+                cls.__init__ = cls.__conf_init__
+
+    @classmethod
+    def add_configurable(self, cls):
+        self._configurables.add(cls)
+
+def configurable(prefix=False, **sections):
+    """ Class decorator, to be called with keyword arguments each
+    describing a config section and corresponding keys. The first time
+    the class is being instantiated, the config keys and their values
+    are being set as attributes to the class, thus ensuring that the cli
+    config may have been processed.  If prefix is True, each key is
+    prefixed with its section name. All attributes get a leading '_'.
+    The attribute '__conf_init__' is used to save the conf setter.
+    This is only neccessary to allow the config to be reread using
+    Configurations.clear(), e.g. in test cases.
+    """
+    def dec(c):
+        def set_conf(*a, **kw):
+            for section, keys in sections.iteritems():
+                conf = ConfigClient(section)
+                for k in keys:
+                    attrname = '_{0}'.format(k)
+                    if prefix:
+                        attrname = '_{0}{1}'.format(section, attrname)
+                    setattr(c, attrname, conf(k))
+            c.__init__ = c.__orig_init__
+            c.__init__(*a, **kw)
+        Configurations.add_configurable(c)
+        c.__orig_init__ = c.__init__
+        c.__conf_init__ = c.__init__ = set_conf
+        return c
+    return dec
+
+__all__ = ['ConfigError', 'ConfigClient', 'Configurations', 'Configurable']
