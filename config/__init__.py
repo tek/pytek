@@ -5,6 +5,8 @@ from optparse import Values
 from tek.config.errors import *
 from tek import logger, debug
 
+__all__ = ['ConfigError', 'ConfigClient', 'Configurations', 'configurable']
+
 def boolify(value):
     """ Return a string's boolean value if it is a string and "true" or
     "false"(case insensitive), else just return the object.
@@ -14,23 +16,40 @@ def boolify(value):
     except:
         return bool(value)
 
-class TypedConfigObject(object):
+class ConfigOption(object):
+    def __init__(self, **params):
+        self.set_argparse_params(**params)
+
+    def set_argparse_params(self, help=''):
+        self._help = help
+        self.help = help
+
+    @property
+    def argparse_params(self):
+        p = dict()
+        for name in ['help']:
+            value = getattr(self, '_' + name, None)
+            if value:
+                p[name] = value
+        return p
+
+class TypedConfigOption(ConfigOption):
     """ This is intended to automagically create objects from a string
-    read from a config file, if desired. If a TypedConfigObject is put
+    read from a config file, if desired. If a TypedConfigOption is put
     into a ConfigDict, setting a value is passed to the set() method,
     which then creates an object from the parameter from the config.
     """
-    def __init__(self, value_type, defaultvalue):
-        """ Construct a TypedConfigObject.
+    def __init__(self, value_type, defaultvalue, **params):
+        """ Construct a TypedConfigOption.
             @param value_type: The type used to create new instances of
-            the config value.  
-            @param defaultvalue: The initial value, which this object is
-            set to
+            the config value.
+            @param defaultvalue: The initial value to which this object
+            is set.
             @type defaultvalue: value_type
-
         """
         self.value_type = value_type
         self.set(defaultvalue)
+        ConfigOption.__init__(self, **params)
 
     def set(self, args):
         """ Assign args as the config object's value.
@@ -40,7 +59,7 @@ class TypedConfigObject(object):
         """
         if isinstance(args, tuple):
             if len(args) != 1: 
-                logger.debug('TypedConfigObject: len > 1')
+                logger.debug('TypedConfigOption: len > 1')
                 self.value = self.value_type(*args)
                 return
             else: args = args[0] 
@@ -55,70 +74,83 @@ class TypedConfigObject(object):
     def __repr__(self):
         return str(self)
 
-class BoolConfigObject(TypedConfigObject):
-    """ Specialization of TypedConfigObject for booleans, as they must
+class BoolConfigOption(TypedConfigOption):
+    """ Specialization of TypedConfigOption for booleans, as they must
     be parsed from strings differently.
     """
-    def __init__(self, defaultvalue=False):
+    def __init__(self, defaultvalue=False, **params):
         """ Set the value_type to bool. """
-        super(BoolConfigObject, self).__init__(bool, defaultvalue)
+        TypedConfigOption.__init__(self, bool, defaultvalue, **params)
 
     def set(self, arg):
         """ Transform arg into a bool value and pass it to super. """
-        super(BoolConfigObject, self).set(boolify(arg))
+        super(BoolConfigOption, self).set(boolify(arg))
 
-class ListConfigObject(TypedConfigObject):
-    def __init__(self, defaultvalue=None, splitchar=','):
+class ListConfigOption(TypedConfigOption):
+    def __init__(self, defaultvalue=None, splitchar=',', **params):
         if defaultvalue is None:
             defaultvalue = []
         self._splitchar = splitchar
-        TypedConfigObject.__init__(self, list, defaultvalue)
+        TypedConfigOption.__init__(self, list, defaultvalue, **params)
 
     def set(self, value):
         if isinstance(value, basestring):
             value = value.split(self._splitchar)
         self.value = value
 
+    def __str__(self):
+        return self._splitchar.join(self.value)
+
+class UnicodeConfigOption(TypedConfigOption):
+    def __init__(self, default, **params):
+        TypedConfigOption.__init__(self, unicode, default, **params)
+
+    def __str__(self):
+        return self.value.encode('utf-8')
+
 class ConfigDict(dict):
-    """ Dictionary that respects TypedConfigObjects when getting or
+    """ Dictionary that respects TypedConfigOptions when getting or
     setting.
     """
     def getitem(self, key):
         """ special method that is used in Configuration objects.
-        Return the content of the TypedConfigObject wrapper, if it is
+        Return the content of the TypedConfigOption wrapper, if it is
         present.
         """
         value = self[key]
-        if isinstance(value, TypedConfigObject): value = value.value
+        if isinstance(value, TypedConfigOption): value = value.value
         return value
 
     def __setitem__(self, key, value):
-        """ TypedConfigObject instances get special treatment:
+        """ TypedConfigOption instances get special treatment:
             If one would be overwritten, call its set() method instead.
-            If the new value also is a TypedConfigObject, pass its value
+            If the new value also is a TypedConfigOption, pass its value
             to set().
-            If the key is new, try to create a TypedConfigObject.
+            If the key is new, try to create a TypedConfigOption.
         """
         if not self.has_key(key):
-            if (isinstance(value, basestring) or
-                isinstance(value, TypedConfigObject)
-                or value is None):
-                pass
-            elif isinstance(value, bool):
-                value = BoolConfigObject(value)
-            else:
-                value = TypedConfigObject(type(value), value)
-            super(ConfigDict, self).__setitem__(key, value)
+            if not (isinstance(value, basestring) or
+                    isinstance(value, TypedConfigOption) or
+                    value is None):
+                if isinstance(value, bool):
+                    value = BoolConfigOption(value)
+                else:
+                    value = TypedConfigOption(type(value), value)
+            dict.__setitem__(self, key, value)
         else:
-            if isinstance(self[key], TypedConfigObject):
-                if isinstance(value, TypedConfigObject): value = value.value
-                self[key].set(value)
+            if isinstance(self[key], TypedConfigOption):
+                if isinstance(value, TypedConfigOption):
+                    self[key].set(value.value)
+                    self[key].set_argparse_params(value.argparse_params)
+                else:
+                    self[key].set(value)
             else:
-                super(ConfigDict, self).__setitem__(key, value)
+                dict.__setitem__(self, key, value)
 
     def update(self, newdict):
         """ Convenience overload. """
-        for key, value in dict(newdict).iteritems(): self[key] = value
+        for key, value in dict(newdict).iteritems():
+            self[key] = value
 
 class Configuration(object):
     """ Container for several dictionaries representing configuration
@@ -408,13 +440,15 @@ class Configurations(object):
                         arg.append('-%s' % self._cli_short_options[name])
                     if self._cli_params.has_key(name):
                         params.update(self._cli_params[name])
-                    if isinstance(value, BoolConfigObject):
+                    if isinstance(value, BoolConfigOption):
                         params['action'] = 'store_true'
                         add()
                         params = {'default': None}
                         arg = ['--no-%s' % name]
                         params['action'] = 'store_false'
                         params['dest'] = name
+                    if isinstance(value, ConfigOption):
+                        params.update(value.argparse_params)
                     add()
         self.set_cli_config(parser.parse_args())
 
@@ -441,6 +475,17 @@ class Configurations(object):
     @classmethod
     def add_configurable(self, cls):
         self._configurables.add(cls)
+
+    @classmethod
+    def write_config(self, filename):
+        with open(filename, 'w') as f:
+            for section, config in self._configs.iteritems():
+                f.write('[{0}]\n'.format(section))
+                for key, value in config.config.iteritems():
+                    if isinstance(value, ConfigOption) and value.help:
+                        f.write('# {0}\n'.format(value.help))
+                    f.write('# {0} = {1:s}\n'.format(key, value))
+                f.write('\n')
 
 def configurable(prefix=False, **sections):
     """ Class decorator, to be called with keyword arguments each
@@ -469,5 +514,3 @@ def configurable(prefix=False, **sections):
         c.__conf_init__ = c.__init__ = set_conf
         return c
     return dec
-
-__all__ = ['ConfigError', 'ConfigClient', 'Configurations', 'configurable']
