@@ -42,16 +42,19 @@ def zip_fill(default, *seqs):
     return map(filler, *seqs)
 
 class Silencer(object):
-    """ Context manager that suppresses output to stdout.
+    """ Context manager that suppresses output to stdout. """
+    def __init__(self, active=True):
+        self._active = active
 
-    """
     def __enter__(self):
-        sys.stdout = self
-        stdouthandler.setLevel(logging.CRITICAL)
+        if self._active:
+            sys.stdout = self
+            stdouthandler.setLevel(logging.CRITICAL)
 
     def __exit__(self, exc_type, exc_val, exc_tb):
-        sys.stdout = sys.__stdout__
-        stdouthandler.setLevel(logging.INFO)
+        if self._active:
+            sys.stdout = sys.__stdout__
+            stdouthandler.setLevel(logging.INFO)
 
     def write(self, data):
         pass
