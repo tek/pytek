@@ -17,33 +17,20 @@ along with this program; if not, see <http://www.gnu.org/licenses/>.
 """
 
 if __name__ == '__main__':
-    import os, sys, pkgutil
-    from tek import debug
+    import sys, pkgutil
+    from tek import logger
     from tek.config import Configurations
-    from tek.util.module import submodules
     assert(len(sys.argv) == 3)
+    dir = sys.argv[1]
+    sys.path[:0] = [dir]
     Configurations.allow_files = False
-    try:
-        from config import reset_config
-        reset_config(register_files=False, reset_parent=False)
-    except ImportError:
-        pass
-    dirs = filter(os.path.isdir, os.listdir(sys.argv[1]))
-    for dir in dirs:
+    configs = (name for l, name, ispkg in pkgutil.walk_packages([dir])
+               if not ispkg and name.rsplit('.', 1)[-1] == 'config')
+    for name in configs:
         try:
-            debug(dir)
-            tip = dir.rsplit('.')[-1]
-            pkg = __import__(dir, fromlist=tip)
-            for loader, name, is_pkg in pkgutil.iter_modules(pkg.__path__):
-                try:
-                    if name == 'config':
-                        mod = __import__('{0}.{1}'.format(dir, name),
-                                         fromlist=name)
-                        if hasattr(mod, 'reset_config'):
-                            mod.reset_config(register_files=False,
-                                            reset_parent=False)
-                except Exception as e:
-                    debug(e)
-        except (ImportError, ValueError) as e:
-            debug(e)
+            mod = __import__(name)
+            if hasattr(mod, 'reset_config'):
+                mod.reset_config(reset_parent=False)
+        except Exception as e:
+            logger.debug(e)
     Configurations.write_config(sys.argv[2])

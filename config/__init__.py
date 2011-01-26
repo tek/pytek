@@ -1,6 +1,5 @@
 from __future__ import absolute_import
 from ConfigParser import SafeConfigParser, NoSectionError
-from optparse import Values
 
 from tek.config.errors import *
 from tek import logger, debug
@@ -141,7 +140,7 @@ class ConfigDict(dict):
             if isinstance(self[key], TypedConfigOption):
                 if isinstance(value, TypedConfigOption):
                     self[key].set(value.value)
-                    self[key].set_argparse_params(value.argparse_params)
+                    self[key].set_argparse_params(**value.argparse_params)
                 else:
                     self[key].set(value)
             else:
@@ -296,7 +295,7 @@ class ConfigClient(object):
         return self.config(key)
 
     def print_all(self):
-        debug(self._config.info)
+        logger.info(self._config.info)
 
     def connect(self, config):
         """ Reference the Configuration instance as the config to be
@@ -484,14 +483,19 @@ class Configurations(object):
 
     @classmethod
     def write_config(self, filename):
+        def write_section(f, section, config):
+            f.write('[{0}]\n'.format(section))
+            for key, value in config.config.iteritems():
+                if isinstance(value, ConfigOption) and value.help:
+                    f.write('\n# {0}\n'.format(value.help))
+                f.write('# {0} = {1:s}\n'.format(key, value))
+            f.write('\n')
         with open(filename, 'w') as f:
+            if self._configs.has_key('global'):
+                write_section(f, 'global', self._configs['global'])
             for section, config in self._configs.iteritems():
-                f.write('[{0}]\n'.format(section))
-                for key, value in config.config.iteritems():
-                    if isinstance(value, ConfigOption) and value.help:
-                        f.write('# {0}\n'.format(value.help))
-                    f.write('# {0} = {1:s}\n'.format(key, value))
-                f.write('\n')
+                if not section == 'global':
+                    write_section(f, section, config)
 
 def configurable(prefix=False, **sections):
     """ Class decorator, to be called with keyword arguments each
