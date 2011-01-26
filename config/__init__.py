@@ -16,8 +16,9 @@ def boolify(value):
         return bool(value)
 
 class ConfigOption(object):
-    def __init__(self, positional=False, **params):
+    def __init__(self, positional=None, short=None, **params):
         self.positional = positional
+        self.short = short
         self.set_argparse_params(**params)
 
     def set_argparse_params(self, help=''):
@@ -32,6 +33,13 @@ class ConfigOption(object):
             if value:
                 p[name] = value
         return p
+
+    def set_from_co(self, other):
+        self.set_argparse_params(other.argparse_params)
+        if other.positional is not None:
+            self.positional = other.positional
+        if other.short is not None:
+            self.short = other.short
 
 class TypedConfigOption(ConfigOption):
     """ This is intended to automagically create objects from a string
@@ -74,13 +82,24 @@ class TypedConfigOption(ConfigOption):
     def __repr__(self):
         return str(self)
 
+    def set_from_co(self, other):
+        if other.value is not None:
+            self.value = other.value
+        ConfigOption.set_from_co(self, other)
+
 class BoolConfigOption(TypedConfigOption):
     """ Specialization of TypedConfigOption for booleans, as they must
     be parsed from strings differently.
     """
-    def __init__(self, defaultvalue=False, **params):
+    def __init__(self, defaultvalue=False, no=None, **params):
         """ Set the value_type to bool. """
         TypedConfigOption.__init__(self, bool, defaultvalue, **params)
+        self.no = no
+
+    def set_from_co(self, other):
+        if other.no is not None:
+            self.no = other.no
+        TypedConfigOption.set_from_co(self, other)
 
     def set(self, arg):
         """ Transform arg into a bool value and pass it to super. """
@@ -140,8 +159,7 @@ class ConfigDict(dict):
         else:
             if isinstance(self[key], TypedConfigOption):
                 if isinstance(value, TypedConfigOption):
-                    self[key].set(value.value)
-                    self[key].set_argparse_params(**value.argparse_params)
+                    self[key].set_from_co(value)
                 else:
                     self[key].set(value)
             else:
@@ -439,23 +457,27 @@ class Configurations(object):
             parser.add_argument(*arg, **params)
         for config in self._configs.itervalues():
             for name, value in config.config.iteritems():
+                switchname = name.replace('_', '-')
                 if (not (isinstance(value, ConfigOption) and value.positional)
                     and (positional is None or name != positional[0])):
-                    arg = ['--%s' % name]
+                    arg = ['--%s' % switchname]
                     params = {'default': None}
                     if self._cli_short_options.has_key(name):
                         arg.append('-%s' % self._cli_short_options[name])
                     if self._cli_params.has_key(name):
                         params.update(self._cli_params[name])
-                    if isinstance(value, BoolConfigOption):
-                        params['action'] = 'store_true'
-                        add()
-                        params = {'default': None}
-                        arg = ['--no-%s' % name]
-                        params['action'] = 'store_false'
-                        params['dest'] = name
                     if isinstance(value, ConfigOption):
                         params.update(value.argparse_params)
+                        if value.short:
+                            arg.append('-%s' % value.short)
+                    if isinstance(value, BoolConfigOption):
+                        params['action'] = 'store_true'
+                        if value.no:
+                            add()
+                            params = {'default': None}
+                            arg = ['--no-%s' % switchname]
+                            params['action'] = 'store_false'
+                            params['dest'] = name
                     add()
         self.set_cli_config(parser.parse_args())
 
