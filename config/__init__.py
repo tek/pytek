@@ -368,6 +368,7 @@ class Configurations(object):
     _configurables = set()
     # read config from file system
     allow_files = True
+    allow_override = True
 
     @classmethod
     def register_files(cls, alias, *files):
@@ -431,19 +432,21 @@ class Configurations(object):
 
     @classmethod
     def override_defaults(self, section, **defaults):
-        if self._configs.has_key(section):
-            self._configs[section].set_defaults(defaults)
-        else:
-            logger.debug('Tried to override defaults in nonexistent section %s'
-                         % section)
+        if self.allow_override:
+            if self._configs.has_key(section):
+                self._configs[section].set_defaults(defaults)
+            else:
+                logger.debug('Tried to override defaults in nonexistent section'
+                             ' %s' % section)
 
     @classmethod
     def override(self, section, **values):
-        if self._configs.has_key(section):
-            self._configs[section].override(**values)
-        else:
-            logger.debug('Tried to override values in nonexistent section %s'
-                         % section)
+        if self.allow_override:
+            if self._configs.has_key(section):
+                self._configs[section].override(**values)
+            else:
+                logger.debug('Tried to override values in nonexistent section'
+                             ' %s' % section)
 
     @classmethod
     def parse_cli(self, positional=None):
