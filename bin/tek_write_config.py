@@ -24,6 +24,7 @@ if __name__ == '__main__':
     dir = sys.argv[1]
     sys.path[:0] = [dir]
     Configurations.allow_files = False
+    Configurations.allow_override = False
     mods = pkgutil.walk_packages([dir], onerror=lambda x: True)
     configs = (name for l, name, ispkg in mods
                if not ispkg and name.rsplit('.', 1)[-1] == 'config')
