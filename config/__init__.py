@@ -536,6 +536,7 @@ def configurable(prefix=False, **sections):
     This is only neccessary to allow the config to be reread using
     Configurations.clear(), e.g. in test cases.
     """
+    # TODO connect attrs to lazy ConfigClient evaluation
     def dec(c):
         def set_conf(*a, **kw):
             for section, keys in sections.iteritems():
