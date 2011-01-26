@@ -16,7 +16,8 @@ def boolify(value):
         return bool(value)
 
 class ConfigOption(object):
-    def __init__(self, **params):
+    def __init__(self, positional=False, **params):
+        self.positional = positional
         self.set_argparse_params(**params)
 
     def set_argparse_params(self, help=''):
@@ -438,7 +439,8 @@ class Configurations(object):
             parser.add_argument(*arg, **params)
         for config in self._configs.itervalues():
             for name, value in config.config.iteritems():
-                if positional is None or name != positional[0]:
+                if (not (isinstance(value, ConfigOption) and value.positional)
+                    and (positional is None or name != positional[0])):
                     arg = ['--%s' % name]
                     params = {'default': None}
                     if self._cli_short_options.has_key(name):
@@ -486,9 +488,10 @@ class Configurations(object):
         def write_section(f, section, config):
             f.write('[{0}]\n'.format(section))
             for key, value in config.config.iteritems():
-                if isinstance(value, ConfigOption) and value.help:
-                    f.write('\n# {0}\n'.format(value.help))
-                f.write('# {0} = {1:s}\n'.format(key, value))
+                if not (isinstance(value, ConfigOption) and value.positional):
+                    if isinstance(value, ConfigOption) and value.help:
+                        f.write('\n# {0}\n'.format(value.help))
+                    f.write('# {0} = {1:s}\n'.format(key, value))
             f.write('\n')
         with open(filename, 'w') as f:
             if self._configs.has_key('global'):
