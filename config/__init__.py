@@ -1,4 +1,21 @@
-from __future__ import absolute_import
+__copyright__ = """ Copyright (c) 2009-2011 Torsten Schmits
+
+This file is part of mootils. mootils is free software;
+you can redistribute it and/or modify it under the terms of the GNU General
+Public License version 2, as published by the Free Software Foundation.
+
+mootils is distributed in the hope that it will be useful, but WITHOUT ANY
+WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
+FOR A PARTICULAR PURPOSE.  See the GNU General Public License for more
+details.
+
+You should have received a copy of the GNU General Public License along with
+this program; if not, write to the Free Software Foundation, Inc., 59 Temple
+Place, Suite 330, Boston, MA  02111-1307  USA
+
+"""
+
+import re
 from ConfigParser import SafeConfigParser, NoSectionError
 
 from tek.config.errors import *
@@ -369,6 +386,7 @@ class Configurations(object):
     # read config from file system
     allow_files = True
     allow_override = True
+    enable_lazy_class_attr = True
 
     @classmethod
     def register_files(cls, alias, *files):
@@ -551,5 +569,37 @@ def configurable(prefix=False, **sections):
         Configurations.add_configurable(c)
         c.__orig_init__ = c.__init__
         c.__conf_init__ = c.__init__ = set_conf
+        return c
+    return dec
+
+conf_attr_re = re.compile(r'_((?P<section>.+)__)?(?P<key>.+)')
+
+def lazy_configurable(prefix=False, set_class_attr=True, **sections):
+    def dec(c):
+        def conf_getattr(self, attr):
+            def try_section(name):
+                section = sections[name]
+                if key in section:
+                    target = (c if set_class_attr and
+                              Configurations.enable_lazy_class_attr else self)
+                    setattr(target, attr, ConfigClient(name)(key))
+                    return True
+            match = conf_attr_re.match(attr)
+            if match:
+                section, key = match.group('section'), match.group('key')
+                sections_to_try = ([section] if section in sections else
+                                   sections)
+                for section in sections_to_try:
+                    if try_section(section):
+                        return getattr(self, attr)
+            return c.__orig_getattr__(self, attr)
+        def noattr(self, attr):
+            t = self.__class__.__name__
+            error = "type object '{0}' has no attribute '{1}'".format(t, attr)
+            raise AttributeError(error)
+        Configurations.add_configurable(c)
+        c.__orig_getattr__ = (c.__getattr__ if hasattr(c, '__getattr__') else
+                              noattr)
+        c.__conf_getattr__ = c.__getattr__ = conf_getattr
         return c
     return dec
