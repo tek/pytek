@@ -175,6 +175,9 @@ class TerminalController(object):
     def write(self, stuff):
         sys.stdout.write(stuff)
 
+    def flush(self):
+        sys.stdout.flush()
+
 up = 'UP'
 down = 'DOWN'
 left = 'LEFT'
@@ -430,6 +433,9 @@ class Terminal(object):
         if Terminal._locks:
             Terminal._locks[-1] -= count
  
+    def flush(self):
+        self.terminal_controller.flush()
+
 class ColorString(object):
     """ String with formatting, preserving length. """
     term = TerminalController()
