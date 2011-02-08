@@ -1,4 +1,4 @@
-__copyright__ = """ Copyright (c) 2009 Torsten Schmits
+__copyright__ = """ Copyright (c) 2009-2011 Torsten Schmits
 
 This file is part of pytek. pytek is free software;
 you can redistribute it and/or modify it under the terms of the GNU General
@@ -16,16 +16,11 @@ Place, Suite 330, Boston, MA  02111-1307  USA
 """
 
 import time
-from itertools import imap
 from re import compile as regex
 
-from dispatch import generic
-from dispatch.strategy import Signature
-
-from tek.log import logger
+from tek import debug
 from tek.tools import *
 from tek.errors import InternalError, InvalidInput, MooException
-from tek.command_line import command_line
 from tek.io.terminal import terminal
 
 class UserInputTerminated(MooException):
