@@ -52,7 +52,7 @@ class ConfigOption(object):
         return p
 
     def set_from_co(self, other):
-        self.set_argparse_params(other.argparse_params)
+        self.set_argparse_params(**other.argparse_params)
         if other.positional is not None:
             self.positional = other.positional
         if other.short is not None:
