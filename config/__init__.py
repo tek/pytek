@@ -554,7 +554,6 @@ def configurable(prefix=False, **sections):
     This is only neccessary to allow the config to be reread using
     Configurations.clear(), e.g. in test cases.
     """
-    # TODO connect attrs to lazy ConfigClient evaluation
     def dec(c):
         def set_conf(*a, **kw):
             for section, keys in sections.iteritems():
@@ -574,7 +573,12 @@ def configurable(prefix=False, **sections):
 
 conf_attr_re = re.compile(r'_((?P<section>.+)__)?(?P<key>.+)')
 
-def lazy_configurable(prefix=False, set_class_attr=True, **sections):
+def lazy_configurable(set_class_attr=True, **sections):
+    """ Same class decorator as configurable, with the difference that
+    config values are not set until first accessed. This is done by
+    overriding __getattr__ and setting matching attributes from the
+    config.
+    """
     def dec(c):
         def conf_getattr(self, attr):
             def try_section(name):
