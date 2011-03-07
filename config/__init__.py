@@ -603,8 +603,7 @@ def lazy_configurable(set_class_attr=True, **sections):
             error = "type object '{0}' has no attribute '{1}'".format(t, attr)
             raise AttributeError(error)
         Configurations.add_configurable(c)
-        c.__orig_getattr__ = (c.__getattr__ if hasattr(c, '__getattr__') else
-                              noattr)
+        c.__orig_getattr__ = getattr(c, '__getattr__', noattr)
         c.__conf_getattr__ = c.__getattr__ = conf_getattr
         return c
     return dec
