@@ -15,8 +15,7 @@ Place, Suite 330, Boston, MA  02111-1307  USA
 
 """
 
-import re
-from ConfigParser import SafeConfigParser, NoSectionError
+import re, ConfigParser
 
 from tek.config.errors import *
 from tek import logger, debug
@@ -352,7 +351,7 @@ class ConfigurationFactory(object):
         self.read_config()
 
     def read_config(self):
-        self.config_parser = SafeConfigParser()
+        self.config_parser = ConfigParser.SafeConfigParser()
         self.config_parser.read(self.files)
 
     def create(self, section, defaults):
@@ -361,8 +360,10 @@ class ConfigurationFactory(object):
             try:
                 file_config = dict(self.config_parser.items(section))
                 config.set_file_config(file_config)
-            except NoSectionError, e: 
+            except ConfigParser.NoSectionError as e:
                 logger.debug('ConfigParser: ' + str(e))
+            except ConfigParser.Error as e:
+                logger.error('ConfigParser: ' + str(e))
         return config
 
 class Configurations(object):
