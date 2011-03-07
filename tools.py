@@ -141,8 +141,7 @@ def index_of(pred, seq):
     return next((i for i, e in enumerate(seq) if pred(e)), None)
 
 def find(pred, seq):
-    i = index_of(pred, seq)
-    return seq[i] if i is not None else i
+    return next(ifilter(pred, seq), None)
 
 def find_iter(pred, it):
     return next(ifilter(pred, it), None)
