@@ -473,12 +473,16 @@ class Configurations(object):
         parser = ArgumentParser()
         arg = ['']
         params = {}
+        seen = []
         if positional is not None:
             parser.add_argument(positional[0], nargs=positional[1])
         def add():
             parser.add_argument(*arg, **params)
         for config in self._configs.itervalues():
             for name, value in config.config.iteritems():
+                if name in seen:
+                    continue
+                seen.append(name)
                 switchname = name.replace('_', '-')
                 if (not (isinstance(value, ConfigOption) and value.positional)
                     and (positional is None or name != positional[0])):
