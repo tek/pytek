@@ -15,13 +15,13 @@ Place, Suite 330, Boston, MA  02111-1307  USA
 
 """
 
-import time
+import time, copy
 from re import compile as regex
 
 from tek import debug
 from tek.tools import *
 from tek.errors import InternalError, InvalidInput, MooException
-from tek.io.terminal import terminal
+from tek.io.terminal import terminal, ColorString
 
 class UserInputTerminated(MooException):
     pass
@@ -46,7 +46,7 @@ class InputQueue(list):
 input_queue = InputQueue()
 
 def is_digit(arg):
-    return isinstance(arg, int) or (isinstance(arg, (unicode, str)) and
+    return isinstance(arg, int) or (isinstance(arg, basestring) and
                                     arg.isdigit())
     
 class UserInput(object):
@@ -119,7 +119,7 @@ class UserInput(object):
 
     def _validate(self):
         return not (self._do_validate and self._validator and not
-                    self._validator.match(str(self._input)))
+                    self._validator.match(unicode(self._input)))
 
     @property
     def prompt(self):
@@ -132,8 +132,8 @@ class UserInput(object):
 class SimpleChoice(UserInput):
     def __init__(self, elements, text=[''], additional=[], *a, **kw):
         self.text = text
-        self._elements = map(str, elements)
-        self._additional = map(str, additional)
+        self._elements = map(unicode, elements)
+        self._additional = map(unicode, additional)
         UserInput.__init__(self, [], *a, **kw)
 
     def _setup_validator(self):
@@ -162,7 +162,7 @@ class SimpleChoice(UserInput):
         return filter(lambda e: not e.isdigit(), self._elements)
 
     def add_element(self, e):
-        self._elements.append(str(e))
+        self._elements.append(unicode(e))
         self._setup_validator()
 
 class SingleCharSimpleChoice(SimpleChoice):
@@ -175,7 +175,7 @@ class SingleCharSimpleChoice(SimpleChoice):
         if enter:
             additional += ['']
         self._enter = enter
-        single = (all(len(str(e)) <= 1 for e in elements + additional) and
+        single = (all(len(unicode(e)) <= 1 for e in elements + additional) and
                   validate)
         SimpleChoice.__init__(self, elements, additional=additional,
                               single=single, validate=validate, *args, **kwargs)
@@ -213,7 +213,7 @@ class SpecifiedChoice(SingleCharSimpleChoice):
                                         *args, **kwargs)
 
     def _make_text(self):
-        text = self._text_pre
+        text = copy.copy(self._text_pre)
         for c in izip(self._numbers, self._choices, self._info):
             text.append(self._format_choice(*c))
         return text + self._text_post
@@ -301,6 +301,35 @@ class LoopingInput(object):
     @property
     def loop_value(self):
         return None
+
+class CheckboxList(LoopingInput, SpecifiedChoice):
+    def __init__(self, elements, initial=None, colors=None, **kw):
+        self._lines = map(unicode, elements)
+        LoopingInput.__init__(self, **kw)
+        SpecifiedChoice.__init__(self, self._lines, simple=['q'], newline=False,
+                                 enter='q', **kw)
+        self._states = initial or [0] * len(elements)
+        t = terminal
+        self._colors = colors or [t.white + t.bg_red, t.black + t.bg_green]
+
+    @property
+    def prompt(self):
+        text_post = copy.copy(self._text_post)
+        text_post[-1] += self.input_hint_string
+        col = lambda c: ColorString(' {} '.format(unicode(c+1)),
+                                    self._colors[self._states[c]])
+        return (self._text_pre + [[' ', col(i), ' ', el] for i, el in
+                                  enumerate(self._lines)] + text_post)
+
+    def process(self):
+        if self._input.isdigit():
+            index = int(self._input) - 1
+            self._states[index] += 1
+            self._states[index] %= len(self._colors)
+
+    @property
+    def loop_value(self):
+        return self._states
 
 def confirm(message, remove_text=False):
     message = [unicode(message)] + ['Press return to continue.']
