@@ -47,7 +47,7 @@ def moo_run(func):
               parms)
         if dodebug:
             raise
-    except MooException, e:
+    except Exception, e:
         logger.error(e)
         if dodebug:
             raise
