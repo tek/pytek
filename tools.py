@@ -174,3 +174,6 @@ def maxlen(*seqs):
 def filterfalse_keys(pred, mydict):
     newkeys = ifilterfalse(pred, mydict)
     return dict([[k, mydict[k]] for k in newkeys])
+
+def list_diff(l1, l2):
+    return list(set(l1) - set(l2))
