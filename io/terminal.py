@@ -25,7 +25,7 @@ from time import sleep
 from dispatch import generic
 from dispatch.strategy import Signature
 
-from tek.log import logger
+from tek.log import logger, debug
 
 class TerminalController(object):
     """
@@ -365,7 +365,9 @@ class Terminal(object):
 
     @write_lines.when(Signature(data=list) | Signature(data=tuple))
     def write_lines_seq(self, data, **kw):
-        if any(isinstance(e, ColorString) for e in data):
+        if any(isinstance(e, LineBreak) for e in data):
+            self.write_lines(split_at_linebreak(data))
+        elif any(isinstance(e, ColorString) for e in data):
             self.write_color_strings(data)
         else:
             for line in data:
@@ -463,6 +465,22 @@ class ColorString(object):
         return (ColorString(self.string[:length], self.format),
                 ColorString(self.string[length:], self.format))
 
+    @generic()
+    def __radd__(self, other):
+        pass
+
+    @__radd__.when(Signature(other=basestring))
+    def radd_str(self, other):
+        return [other, self]
+
+    @__radd__.when(Signature(other=list))
+    def radd_list(self, other):
+        return list.__add__(other, [self])
+
+class LineBreak(ColorString):
+    def __init__(self):
+        ColorString.__init__(self, '', '')
+
 def split_string(s, length):
     if isinstance(s, ColorString):
         return s.split(length)
@@ -483,5 +501,24 @@ def break_color_string_list(data, cols):
         width += len(s)
     lines.append(current)
     return lines
+
+def split_at_linebreak(data):
+    lines = [[]]
+    for e in data:
+        if isinstance(e, LineBreak):
+            lines.append([])
+        else:
+            lines[-1].append(e)
+    return lines
+
+def break_blocks(blocks):
+    def break_lines(lines, block):
+        if sum(map(len, lines[-1])) + len(block) >= terminal.cols:
+            lines.extend([[''], [' ']])
+        else:
+            lines[-1].append(' ')
+            lines[-1].append(block)
+        return lines
+    return reduce(break_lines, blocks, [[]])
 
 terminal = Terminal()
