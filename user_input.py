@@ -198,6 +198,8 @@ class YesNo(SingleCharSimpleChoice):
 class SpecifiedChoice(SingleCharSimpleChoice):
     """ Automatically supply enumeration for the strings available for
     choice and query for a number.
+    @param info: list of lines to print after the corresponding
+    element, without enumeration.
     """
     def __init__(self, elements, text_pre=None, text_post=None, simple=None,
                  info=None, *args, **kwargs):
@@ -207,24 +209,19 @@ class SpecifiedChoice(SingleCharSimpleChoice):
         self._text_post = text_post or []
         self._info = info or [[]] * len(elements)
         self._numbers = range(1, len(elements) + 1)
-        text = self._make_text()
         SingleCharSimpleChoice.__init__(self, elements=self._numbers,
-                                        text=text, additional=self._simple,
+                                        text=[], additional=self._simple,
                                         *args, **kwargs)
-
-    def _make_text(self):
-        text = copy.copy(self._text_pre)
-        for c in izip(self._numbers, self._choices, self._info):
-            text.append(self._format_choice(*c))
-        return text + self._text_post
 
     def _format_choice(self, n, choice, info):
         return [' [%d] %s' % (n, choice)] + [' ' * 5 + i for i in info]
 
     @property
-    def fail_prompt(self):
-        sup = SingleCharSimpleChoice.fail_prompt.fget(self)
-        return sup
+    def prompt(self):
+        text = copy.copy(self._text_pre)
+        for c in izip(self._numbers, self._choices, self._info):
+            text.append(self._format_choice(*c))
+        return text + self._text_post
 
     @property
     def input_hint(self):
