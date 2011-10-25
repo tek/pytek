@@ -192,9 +192,10 @@ class Terminal(object):
             68: -1,
             67: 1
         }
-        def __init__(self, terminal, single=False):
+        def __init__(self, terminal, single=False, initial=None):
             self._terminal = terminal
             self._single = single
+            self._input = list(initial) if initial is not None else []
             self._fd = sys.stdin.fileno()
 
         def __enter__(self):
@@ -205,8 +206,8 @@ class Terminal(object):
             self._oldflags = fcntl.fcntl(self._fd, fcntl.F_GETFL)
             fcntl.fcntl(self._fd, fcntl.F_SETFL, self._oldflags | os.O_NONBLOCK)
             self._done = False
-            self._input = []
-            self._cursor_position = 0
+            self._cursor_position = len(self._input)
+            self._terminal.write(''.join(self._input))
             return self
 
         def __exit__(self, exc_type, exc_value, traceback):
@@ -416,8 +417,9 @@ class Terminal(object):
         else:
             raise AttributeError(name)
 
-    def input(self, single=False):
-        with Terminal.InputReader(self, single) as input:
+    def input(self, single=False, initial=None):
+        reader = Terminal.InputReader(self, single=single, initial=initial)
+        with reader as input:
             return input.read()
 
     def push(self, data='', **kw):
