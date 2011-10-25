@@ -51,13 +51,14 @@ def is_digit(arg):
     
 class UserInput(object):
     def __init__(self, text, validator=None, validate=True, newline=True,
-                 single=False, remove_text=False, **kw):
+                 single=False, remove_text=False, initial_input=None, **kw):
         self._text = text
         self._validator = validator
         self._do_validate = validate
         self._newline = newline
         self._single = single
         self._remove_text = remove_text
+        self._initial_input = initial_input
         self.__init_attributes()
 
     def __init_attributes(self):
@@ -100,7 +101,7 @@ class UserInput(object):
     def _read(self, prompt):
         terminal.push(prompt)
         terminal.write(' ')
-        input = terminal.input(self._single)
+        input = terminal.input(single=self._single, initial=self._initial_input)
         valid = self._do_input(input)
         if not valid:
             terminal.pop()
