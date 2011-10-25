@@ -177,3 +177,8 @@ def filterfalse_keys(pred, mydict):
 
 def list_diff(l1, l2):
     return list(set(l1) - set(l2))
+
+def list_uniq_ordered(seq):
+    seen = set()
+    seen_add = seen.add
+    return [x for x in seq if x not in seen and not seen_add(x)]
