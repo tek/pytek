@@ -22,7 +22,7 @@ from tek import dodebug, logger
 from tek.errors import MooException
 from tek.tools import str_list
 
-def moo_run(func):
+def moo_run(func, *args):
     def interrupt(signum, frame):
         signal(SIGINT, SIG_IGN)
         print()
@@ -31,7 +31,7 @@ def moo_run(func):
     if not dodebug:
         signal(SIGINT, interrupt)
     try:
-        func()
+        func(*args)
     except AmbiguousMethod, e:
         parms = (e.args[1][0].__class__.__name__,
                  str_list(a.__class__.__name__ for a in e.args[1][1:]))
