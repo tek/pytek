@@ -182,3 +182,14 @@ def list_uniq_ordered(seq):
     seen = set()
     seen_add = seen.add
     return [x for x in seq if x not in seen and not seen_add(x)]
+
+def sizeof_fmt(num):
+    for x in ['bytes','KB','MB','GB','TB']:
+        if num < 1024.0:
+            break
+        num /= 1024.0
+    return "%3.1f %s" % (num, x)
+
+def free_space_in_dir(dir):
+    f = os.statvfs(dir)
+    return f.f_bfree * f.f_bsize
