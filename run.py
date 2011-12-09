@@ -63,22 +63,25 @@ class SignalManager(object):
 def moo_run(func, *args):
     try:
         func(*args)
-    except AmbiguousMethod, e:
+    except AmbiguousMethod as e:
         parms = (e.args[1][0].__class__.__name__,
                  str_list(a.__class__.__name__ for a in e.args[1][1:]))
-        print('dispatch ambiguity on a %s with argument types (%s)' % parms)
+        text = 'dispatch ambiguity on a {} with argument types ({})'
+        print(text.format(*parms))
         print('ambiguous functions were: ' + str_list(f[1].__name__ for f in
                                                     e.args[0]))
         if dodebug:
             raise
-    except NoApplicableMethods, e:
+    except NoApplicableMethods as e:
         parms = (e.args[0][0].__class__.__name__,
                  str_list(a.__class__.__name__ for a in e.args[0][1:]))
-        print('no applicable dispatch method on a %s with argument types (%s)' %
-              parms)
+        text = 'no applicable dispatch method on a {} with argument types ({})' 
+        print(text.format(*parms))
         if dodebug:
             raise
-    except Exception, e:
+    except MooException as e:
+        logger.error(e)
+    except Exception as e:
         logger.error(e)
         if dodebug:
             raise
