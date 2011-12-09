@@ -14,7 +14,7 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, see <http://www.gnu.org/licenses/>.
 """
 
-from signal import signal, SIGINT, SIG_IGN
+import signal, sys
 
 from dispatch.interfaces import AmbiguousMethod, NoApplicableMethods
 
@@ -22,14 +22,45 @@ from tek import dodebug, logger
 from tek.errors import MooException
 from tek.tools import str_list
 
+class SignalManager(object):
+    _instance = None
+
+    class __metaclass__(type):
+        @property
+        def instance(cls):
+            if cls._instance is None:
+                cls._instance = SignalManager()
+            return cls._instance
+
+    def __init__(self):
+        if SignalManager._instance is not None:
+            raise MooException('Tried to instantiate singleton SignalManager!')
+        self._handlers = dict()
+        self.exit_on_interrupt = True
+
+    def sigint(self, handler):
+        self.add(signal.SIGINT, handler)
+
+    def add(self, signum, handler):
+        signal.signal(signum, self.handle)
+        self._handlers.setdefault(signum, []).append(handler)
+
+    def remove(self, handler):
+        for sig in self._handlers.itervalues():
+            try:
+                sig.remove(handler)
+            except ValueError:
+                pass
+
+    def handle(self, signum, frame):
+        logger.error('Interrupted by signal {}'.format(signum))
+        for handler in reversed(self._handlers.get(signum, [])):
+            handler(signum, frame)
+        signal.signal(signum, signal.SIG_IGN)
+        if signum == signal.SIGINT and self.exit_on_interrupt:
+            sys.exit()
+
 def moo_run(func, *args):
-    def interrupt(signum, frame):
-        signal(SIGINT, SIG_IGN)
-        print()
-        print("Interrupted by signal %d." % signum)
-        exit(1)
-    if not dodebug:
-        signal(SIGINT, interrupt)
     try:
         func(*args)
     except AmbiguousMethod, e:
