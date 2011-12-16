@@ -15,12 +15,13 @@ Place, Suite 330, Boston, MA  02111-1307  USA
 
 """
 
-import re, ConfigParser
+import re, ConfigParser, os
 
 from tek.config.errors import *
 from tek import logger, debug
 
-__all__ = ['ConfigError', 'ConfigClient', 'Configurations', 'configurable']
+__all__ = ['ConfigError', 'ConfigClient', 'Configurations', 'configurable',
+           'lazy_configurable']
 
 def boolify(value):
     """ Return a string's boolean value if it is a string and "true" or
@@ -142,6 +143,13 @@ class UnicodeConfigOption(TypedConfigOption):
 
     def __str__(self):
         return self.value.encode('utf-8')
+
+class PathConfigOption(UnicodeConfigOption):
+    def __init__(self, path=None, **params):
+        super(PathConfigOption, self).__init__(path or '', **params)
+
+    def set(self, path):
+        self.value = os.path.expanduser(path)
 
 class ConfigDict(dict):
     """ Dictionary that respects TypedConfigOptions when getting or
