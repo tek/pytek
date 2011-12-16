@@ -17,7 +17,8 @@ along with this program; if not, see <http://www.gnu.org/licenses/>.
 """
 
 if __name__ == '__main__':
-    from tek.config import write_pkg_config
+    from tek.config.write import write_pkg_config
+    import sys
     assert(len(sys.argv) == 3)
     write_pkg_config(*sys.argv[1:])
     dir = sys.argv[1]
