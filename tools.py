@@ -21,11 +21,7 @@ import sys, collections, operator, os, logging
 from itertools import *
 
 from tek.log import stdouthandler, debug
-
-try:
-    from numpy import cumsum
-except:
-    cumsum = lambda s: reduce(lambda a, b: a + [a[-1] + b], s[1:], s[:1])
+from tek.io.terminal import terminal
 
 try:
     from itertools import compress
@@ -33,8 +29,6 @@ except ImportError:
     def compress(data, selectors):
         # compress('ABCDEF', [1,0,1,0,1,1]) --> A C E F
         return (d for d, s in izip(data, selectors) if s)
-
-from tek.errors import MooException
 
 def zip_fill(default, *seqs):
     # TODO itertools.zip_longest
@@ -82,18 +76,18 @@ def make_list(*args):
                 result.append(a)
     return result
 
-def camelcaseify(name):
-    return ''.join([n.capitalize() for n in name.split('_')])
+def camelcaseify(name, sep=''):
+    return sep.join([n.capitalize() for n in name.split('_')])
 
-is_seq = lambda x: not isinstance(x, basestring) and \
-                   (isinstance(x, collections.Sequence) or
-                    hasattr(x, '__iter__'))
-must_repeat = lambda x: isinstance(x, (basestring, type)) or \
-                        hasattr(x, 'ymap_repeat')
-must_not_repeat = lambda x: isinstance(x, repeat) or is_seq(x) or \
-                            hasattr(x, '__len__')
-iterify = lambda x: x if not must_repeat(x) and must_not_repeat(x) else \
-                    repeat(x)
+is_seq = lambda x: (not isinstance(x, basestring) and
+                    (isinstance(x, collections.Sequence) or
+                     hasattr(x, '__iter__')))
+must_repeat = lambda x: (isinstance(x, (basestring, type)) or
+                         hasattr(x, 'ymap_repeat'))
+must_not_repeat = lambda x: (isinstance(x, repeat) or is_seq(x) or
+                             hasattr(x, '__len__'))
+iterify = lambda x: (x if not must_repeat(x) and must_not_repeat(x) else
+                     repeat(x))
 
 def yimap(func, *args, **kwargs):
     return imap(lambda *a: func(*a, **kwargs), *imap(iterify, args))
@@ -125,6 +119,7 @@ def ijoin_lists(l):
     if l:
         try:
             if not all(ymap(isinstance, l, list)):
+                from tek.errors import MooException
                 raise MooException('Some elements aren\'t lists!')
             for i in cumsum([0] + map(len, l[:-1])):
                 l[i:i+1] = l[i]
