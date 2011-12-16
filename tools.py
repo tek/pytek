@@ -17,7 +17,7 @@ Place, Suite 330, Boston, MA  02111-1307  USA
 
 """
 
-import sys, collections, operator, os, logging
+import sys, collections, os, logging, threading, time, urllib2
 from itertools import *
 
 from tek.log import stdouthandler, debug
@@ -112,7 +112,8 @@ def filter_index(l, index):
     return [l[i] for i in index]
 
 def join_lists(l):
-    return reduce(operator.add, l, [])
+    from operator import add
+    return reduce(add, l, [])
 
 def ijoin_lists(l):
     """ Convert the list of lists l to its elements' sums. """
@@ -188,3 +189,6 @@ def sizeof_fmt(num):
 def free_space_in_dir(dir):
     f = os.statvfs(dir)
     return f.f_bfree * f.f_bsize
+
+def resolve_redirect(url):
+    return urllib2.urlopen(url).url
