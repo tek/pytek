@@ -14,7 +14,7 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, see <http://www.gnu.org/licenses/>.
 """
 
-import signal, sys
+import signal, sys, threading
 
 from dispatch.interfaces import AmbiguousMethod, NoApplicableMethods
 
@@ -42,7 +42,8 @@ class SignalManager(object):
         self.add(signal.SIGINT, handler)
 
     def add(self, signum, handler):
-        signal.signal(signum, self.handle)
+        if threading.current_thread().name == 'MainThread':
+            signal.signal(signum, self.handle)
         self._handlers.setdefault(signum, []).append(handler)
 
     def remove(self, handler):
