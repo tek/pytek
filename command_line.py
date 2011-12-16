@@ -1,6 +1,6 @@
 from __future__ import print_function
 
-__copyright__ = """ Copyright (c) 2009 Torsten Schmits
+__copyright__ = """ Copyright (c) 2009-2011 Torsten Schmits
 
 This file is part of pytek. pytek is free software;
 you can redistribute it and/or modify it under the terms of the GNU General
@@ -17,9 +17,9 @@ Place, Suite 330, Boston, MA  02111-1307  USA
 
 """
 
-from tek.io.terminal import TerminalController, terminal
+from tek.io.terminal import TerminalController
 from tek.tools import str_list, pretty, short
-from dispatch import generic, on
+from dispatch import generic
 from dispatch.strategy import Signature
 
 class CommandLine(object):
