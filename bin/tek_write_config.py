@@ -17,22 +17,7 @@ along with this program; if not, see <http://www.gnu.org/licenses/>.
 """
 
 if __name__ == '__main__':
-    import sys, pkgutil
-    from tek import logger
-    from tek.config import Configurations
+    from tek.config import write_pkg_config
     assert(len(sys.argv) == 3)
+    write_pkg_config(*sys.argv[1:])
     dir = sys.argv[1]
-    sys.path[:0] = [dir]
-    Configurations.allow_files = False
-    Configurations.allow_override = False
-    mods = pkgutil.walk_packages([dir], onerror=lambda x: True)
-    configs = (name for l, name, ispkg in mods
-               if not ispkg and name.rsplit('.', 1)[-1] == 'config')
-    for name in configs:
-        try:
-            mod = __import__(name)
-            if hasattr(mod, 'reset_config'):
-                mod.reset_config(reset_parent=False)
-        except Exception as e:
-            logger.debug(e)
-    Configurations.write_config(sys.argv[2])
