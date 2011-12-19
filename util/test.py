@@ -16,10 +16,13 @@ along with this program; if not, see <http://www.gnu.org/licenses/>.
 
 import unittest
 
-from tek import debug, logger
+from tek import Configurations
 from tek.util.module import submodules
 
 __all__ = ['run_all_tests', 'test_suite_all']
+
+# Lazy attributes can't be cleared on reset
+Configurations.enable_lazy_class_attr = False
 
 test_loader = unittest.defaultTestLoader.loadTestsFromModule
 
