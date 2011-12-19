@@ -179,6 +179,64 @@ def list_uniq_ordered(seq):
     seen_add = seen.add
     return [x for x in seq if x not in seen and not seen_add(x)]
 
+class ProgressPrinter(threading.Thread):
+    def __init__(self, source, dest):
+        self._target_size = os.path.getsize(source)
+        self._destination = dest
+        self._running = False
+        self._file_size = 0.
+        threading.Thread.__init__(self)
+
+    def run(self):
+        self._running = True
+        while self._running:
+            self._print_progress()
+            time.sleep(1)
+
+    def _print_progress(self):
+        if os.path.isfile(self._destination):
+            self._file_size = os.path.getsize(self._destination)
+            text = u'{:.2%} ({}k)'.format(self._percent, self._progress)
+            terminal.pop()
+            terminal.push(text)
+            terminal.flush()
+
+    @property
+    def _percent(self):
+        return self._file_size / self._target_size
+
+    @property
+    def _progress(self):
+        return self._file_size / 1024.
+
+    def stop(self):
+        self._running = False
+
+    def finish(self):
+        self._progress = self._file_size
+        self._percent = 1.
+        self._print_progress()
+        self.stop()
+
+def copy_progress(source, dest):
+    import shutil, signal
+    old_handler = signal.getsignal(signal.SIGINT)
+    dest_file = (os.path.join(dest, os.path.basename(source)) if
+                 os.path.isdir(dest) else dest)
+    progress = ProgressPrinter(source, dest_file)
+    def interrupt(signum, frame):
+        progress.stop()
+        signal(signal.SIGINT, old_handler)
+        print()
+        print("Interrupted by signal %d." % signum)
+    signal.signal(signal.SIGINT, interrupt)
+    terminal.lock()
+    terminal.push_lock()
+    progress.start()
+    shutil.copy(source, dest)
+    progress.finish()
+    terminal.pop_lock()
+
 def sizeof_fmt(num):
     for x in ['bytes','KB','MB','GB','TB']:
         if num < 1024.0:
