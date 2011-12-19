@@ -22,3 +22,8 @@ from .errors import MooException
 from .command_line import command_line, PrefixPrinter
 from .user_input import YesNo
 from .config import Configurations, ConfigClient
+
+try:
+    import tek_utils as utils
+except ImportError:
+    logger.debug('Couldn\'t import tek_utils!')
