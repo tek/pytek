@@ -15,141 +15,15 @@ Place, Suite 330, Boston, MA  02111-1307  USA
 
 """
 
-import re, ConfigParser, os
+import re, ConfigParser
 
 from tek.config.errors import *
+from tek.config.options import *
+from tek.config.options import ConfigOption, TypedConfigOption
 from tek import logger, debug
 
 __all__ = ['ConfigError', 'ConfigClient', 'Configurations', 'configurable',
            'lazy_configurable']
-
-def boolify(value):
-    """ Return a string's boolean value if it is a string and "true" or
-    "false"(case insensitive), else just return the object.
-    """
-    try:
-        return value.lower() == 'true'
-    except:
-        return bool(value)
-
-class ConfigOption(object):
-    def __init__(self, positional=None, short=None, **params):
-        self.positional = positional
-        self.short = short
-        self.set_argparse_params(**params)
-
-    def set_argparse_params(self, help=''):
-        self._help = help
-        self.help = help
-
-    @property
-    def argparse_params(self):
-        p = dict()
-        for name in ['help']:
-            value = getattr(self, '_' + name, None)
-            if value:
-                p[name] = value
-        return p
-
-    def set_from_co(self, other):
-        self.set_argparse_params(**other.argparse_params)
-        if other.positional is not None:
-            self.positional = other.positional
-        if other.short is not None:
-            self.short = other.short
-
-class TypedConfigOption(ConfigOption):
-    """ This is intended to automagically create objects from a string
-    read from a config file, if desired. If a TypedConfigOption is put
-    into a ConfigDict, setting a value is passed to the set() method,
-    which then creates an object from the parameter from the config.
-    """
-    def __init__(self, value_type, defaultvalue, **params):
-        """ Construct a TypedConfigOption.
-            @param value_type: The type used to create new instances of
-            the config value.
-            @param defaultvalue: The initial value to which this object
-            is set.
-            @type defaultvalue: value_type
-        """
-        self.value_type = value_type
-        self.set(defaultvalue)
-        ConfigOption.__init__(self, **params)
-
-    def set(self, args):
-        """ Assign args as the config object's value.
-        If args is not of the value_type of the config object, it is
-        passed to value_type.__init__. args may be a tuple of 
-        parameters.
-        """
-        if isinstance(args, tuple):
-            if len(args) != 1: 
-                logger.debug('TypedConfigOption: len > 1')
-                self.value = self.value_type(*args)
-                return
-            else: args = args[0] 
-        if isinstance(args, self.value_type): 
-            self.value = args
-        else:
-            self.value = self.value_type(args)
-
-    def __str__(self):
-        return str(self.value)
-
-    def __repr__(self):
-        return str(self)
-
-    def set_from_co(self, other):
-        if other.value is not None:
-            self.value = other.value
-        ConfigOption.set_from_co(self, other)
-
-class BoolConfigOption(TypedConfigOption):
-    """ Specialization of TypedConfigOption for booleans, as they must
-    be parsed from strings differently.
-    """
-    def __init__(self, defaultvalue=False, no=None, **params):
-        """ Set the value_type to bool. """
-        TypedConfigOption.__init__(self, bool, defaultvalue, **params)
-        self.no = no
-
-    def set_from_co(self, other):
-        if other.no is not None:
-            self.no = other.no
-        TypedConfigOption.set_from_co(self, other)
-
-    def set(self, arg):
-        """ Transform arg into a bool value and pass it to super. """
-        super(BoolConfigOption, self).set(boolify(arg))
-
-class ListConfigOption(TypedConfigOption):
-    def __init__(self, defaultvalue=None, splitchar=',', **params):
-        if defaultvalue is None:
-            defaultvalue = []
-        self._splitchar = splitchar
-        TypedConfigOption.__init__(self, list, defaultvalue, **params)
-
-    def set(self, value):
-        if isinstance(value, basestring):
-            value = value.split(self._splitchar)
-        self.value = value
-
-    def __str__(self):
-        return self._splitchar.join(self.value)
-
-class UnicodeConfigOption(TypedConfigOption):
-    def __init__(self, default, **params):
-        TypedConfigOption.__init__(self, unicode, default, **params)
-
-    def __str__(self):
-        return self.value.encode('utf-8')
-
-class PathConfigOption(UnicodeConfigOption):
-    def __init__(self, path=None, **params):
-        super(PathConfigOption, self).__init__(path or '', **params)
-
-    def set(self, path):
-        self.value = os.path.expanduser(path)
 
 class ConfigDict(dict):
     """ Dictionary that respects TypedConfigOptions when getting or
@@ -161,7 +35,8 @@ class ConfigDict(dict):
         present.
         """
         value = self[key]
-        if isinstance(value, TypedConfigOption): value = value.value
+        if isinstance(value, TypedConfigOption):
+            value = value.effective_value
         return value
 
     def __setitem__(self, key, value):
