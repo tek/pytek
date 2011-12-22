@@ -15,7 +15,7 @@ Place, Suite 330, Boston, MA  02111-1307  USA
 
 """
 
-import re, ConfigParser
+import re, ConfigParser, os
 
 from tek.config.errors import *
 from tek.config.options import *
@@ -274,6 +274,7 @@ class Configurations(object):
 
     @classmethod
     def register_files(cls, alias, *files):
+        files = map(os.path.expanduser, files)
         if not cls._factories.has_key(alias):
             cls._factories[alias] = ConfigurationFactory(files, cls.allow_files)
 
