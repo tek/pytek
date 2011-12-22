@@ -228,13 +228,16 @@ class ConfigurationFactory(object):
     """ Construct Configuration objects out of a section of the given
     config files.
     """
-    def __init__(self, files, allow_files=True):
-        self.files = files
+    def __init__(self, allow_files=True):
+        self.files = []
+        self.config_parser = ConfigParser.SafeConfigParser()
         self._allow_files = allow_files
+
+    def add_files(self, files):
+        self.files += files
         self.read_config()
 
     def read_config(self):
-        self.config_parser = ConfigParser.SafeConfigParser()
         self.config_parser.read(self.files)
 
     def create(self, section, defaults):
@@ -273,17 +276,25 @@ class Configurations(object):
     enable_lazy_class_attr = True
 
     @classmethod
-    def register_files(cls, alias, *files):
-        files = map(os.path.expanduser, files)
+    def create_alias(cls, alias):
         if not cls._factories.has_key(alias):
-            cls._factories[alias] = ConfigurationFactory(files, cls.allow_files)
+            cls._factories[alias] = ConfigurationFactory(cls.allow_files)
+
+    @classmethod
+    def register_files(cls, alias, *files):
+        cls.create_alias(alias)
+        files = map(os.path.expanduser, files)
+        cls._factories[alias].add_files(files)
 
     @classmethod
     def register_config(cls, file_alias, section, **defaults):
         """ Add a Configuration instance to the configs dict that
         contains the specified section of the files denoted by the
         specified alias and connect waiting client instances.
+        If register_files wasn't called with this alias before, it is
+        created now.
         """
+        cls.create_alias(file_alias)
         if not cls._configs.has_key(section):
             config = cls._factories[file_alias].create(section, defaults)
             if cls._cli_config:
