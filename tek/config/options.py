@@ -144,7 +144,7 @@ class ListConfigOption(TypedConfigOption):
     @property
     def effective_value(self):
         if self._element_type is not None:
-            return [e.effective_value for e in self.value]
+            return [getattr(e, 'effective_value', e) for e in self.value]
         else:
             return TypedConfigOption.effective_value.fget(self)
 
