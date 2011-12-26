@@ -17,7 +17,7 @@ Place, Suite 330, Boston, MA  02111-1307  USA
 
 """
 
-import sys, collections, os, logging, threading, time, urllib2
+import sys, collections, os, logging, threading, time, requests
 from itertools import *
 
 from tek.log import stdouthandler, debug
@@ -249,4 +249,7 @@ def free_space_in_dir(dir):
     return f.f_bfree * f.f_bsize
 
 def resolve_redirect(url):
-    return urllib2.urlopen(url).url
+    return requests.get(url).url
+
+def lists_uniq(lists):
+    return list(set(sum(lists, [])))
