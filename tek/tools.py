@@ -1,6 +1,6 @@
 from __future__ import print_function
 
-__copyright__ = """ Copyright (c) 2009-2011 Torsten Schmits
+__copyright__ = """ Copyright (c) 2009-2012 Torsten Schmits
 
 This file is part of pytek. pytek is free software;
 you can redistribute it and/or modify it under the terms of the GNU General
@@ -55,6 +55,9 @@ class Silencer(object):
 
 def repr_params(*params):
     return '(' + ', '.join(map(repr, params)) + ')'
+
+def simple_repr(self, *params):
+    return '{}{}'.format(self.__class__.__name__, repr_params(*params))
 
 def str_list(l, j=', ', printer=lambda s: s, typ=unicode, do_filter=False):
     strings = map(printer, l)
