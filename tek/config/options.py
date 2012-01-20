@@ -1,4 +1,4 @@
-__copyright__ = """ Copyright (c) 2011 Torsten Schmits
+__copyright__ = """ Copyright (c) 2011-2012 Torsten Schmits
 
 This program is free software; you can redistribute it and/or modify it
 under the terms of the GNU General Public License as published by the
@@ -158,7 +158,6 @@ class PathListConfigOption(ListConfigOption):
 
     def set(self, value):
         super(PathListConfigOption, self).set(value)
-        debug(self.value)
         globbed = map(glob.glob, [v.value for v in self.value])
         self.value = join_lists(globbed)
 
