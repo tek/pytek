@@ -1,4 +1,4 @@
-__copyright__ = """ Copyright (c) 2010-2011 Torsten Schmits
+__copyright__ = """ Copyright (c) 2010-2012 Torsten Schmits
 
 This program is free software; you can redistribute it and/or modify it
 under the terms of the GNU General Public License as published by the
@@ -38,7 +38,9 @@ class SignalManager(object):
         self._handlers = dict()
         self.exit_on_interrupt = True
 
-    def sigint(self, handler):
+    def sigint(self, handler=None):
+        if handler is None:
+            handler = lambda s, f: True
         self.add(signal.SIGINT, handler)
 
     def add(self, signum, handler):
@@ -61,9 +63,11 @@ class SignalManager(object):
         if signum == signal.SIGINT and self.exit_on_interrupt:
             sys.exit()
 
-def moo_run(func, *args):
+def moo_run(func, handle_sigint=True, *a, **kw):
     try:
-        func(*args)
+        if handle_sigint:
+            SignalManager.instance.sigint()
+        func(*a, **kw)
     except AmbiguousMethod as e:
         parms = (e.args[1][0].__class__.__name__,
                  str_list(a.__class__.__name__ for a in e.args[1][1:]))
@@ -76,7 +80,7 @@ def moo_run(func, *args):
     except NoApplicableMethods as e:
         parms = (e.args[0][0].__class__.__name__,
                  str_list(a.__class__.__name__ for a in e.args[0][1:]))
-        text = 'no applicable dispatch method on a {} with argument types ({})' 
+        text = 'no applicable dispatch method on a {} with argument types ({})'
         print(text.format(*parms))
         if dodebug:
             raise
