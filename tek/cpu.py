@@ -14,11 +14,12 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, see <http://www.gnu.org/licenses/>.
 """
 
-import resource
+import resource, functools
 
 from tek import logger
 
 class CPUTimer(object):
+    enabled = True
 
     def __init__(self, label='cpu time', log=True):
         self._label = label
@@ -33,9 +34,17 @@ class CPUTimer(object):
 
     def __exit__(self, exc_type, exc_val, exc_tb):
         self._end = self._current
-        if self._log:
+        if self._log and self.enabled:
             logger.info('{}: {}s'.format(self._label, self.time))
 
     @property
     def time(self):
         return self._end - self._start
+
+def timed(func):
+    @functools.wraps(func)
+    def wrapper(self, *a, **kw):
+        with CPUTimer(label='{}.{}'.format(self.__class__.__name__,
+                                           func.__name__)):
+            return func(self, *a, **kw)
+    return wrapper
