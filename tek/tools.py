@@ -244,12 +244,15 @@ def copy_progress(source, dest):
     progress.finish()
     terminal.pop_lock()
 
-def sizeof_fmt(num):
-    for x in ['bytes','KB','MB','GB','TB']:
-        if num < 1024.0:
+def sizeof_fmt(num, prec=1, bi=True):
+    div = 1024. if bi else 1000.
+    fmt = '{{:3.{}f}} {{}}'.format(prec)
+    debug(fmt)
+    for x in ['B','KB','MB','GB','TB']:
+        if num < div:
             break
-        num /= 1024.0
-    return "%3.1f %s" % (num, x)
+        num /= div
+    return fmt.format(num, x)
 
 def free_space_in_dir(dir):
     f = os.statvfs(dir)
