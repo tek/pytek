@@ -1,4 +1,4 @@
-from __future__ import print_function
+from __future__ import print_function, absolute_import
 
 __copyright__ = """ Copyright (c) 2009-2012 Torsten Schmits
 
@@ -17,18 +17,21 @@ Place, Suite 330, Boston, MA  02111-1307  USA
 
 """
 
-import sys, collections, os, logging, threading, time, requests
-from itertools import *
+import sys
+import collections
+import os
+import logging
+import threading
+import time
+import requests
+import itertools
 
-from tek.log import stdouthandler, debug
+import numpy as np
+
+from tek.log import stdouthandler, debug, logger
 from tek.io.terminal import terminal
 
-try:
-    from itertools import compress
-except ImportError:
-    def compress(data, selectors):
-        # compress('ABCDEF', [1,0,1,0,1,1]) --> A C E F
-        return (d for d, s in izip(data, selectors) if s)
+from itertools import compress
 
 def zip_fill(default, *seqs):
     # TODO itertools.zip_longest
@@ -62,11 +65,11 @@ def simple_repr(self, *params):
 def str_list(l, j=', ', printer=lambda s: s, typ=unicode, do_filter=False):
     strings = map(printer, l)
     if do_filter:
-        strings = ifilter(None, strings)
+        strings = itertools.ifilter(None, strings)
     return j.join(map(typ, strings))
 
 def choose(lst, indicator):
-    return [l for l, i in izip(lst, indicator) if i]
+    return [l for l, i in itertools.izip(lst, indicator) if i]
 
 def make_list(*args):
     result = []
@@ -87,13 +90,14 @@ is_seq = lambda x: (not isinstance(x, basestring) and
                      hasattr(x, '__iter__')))
 must_repeat = lambda x: (isinstance(x, (basestring, type)) or
                          hasattr(x, 'ymap_repeat'))
-must_not_repeat = lambda x: (isinstance(x, repeat) or is_seq(x) or
+must_not_repeat = lambda x: (isinstance(x, itertools.repeat) or is_seq(x) or
                              hasattr(x, '__len__'))
 iterify = lambda x: (x if not must_repeat(x) and must_not_repeat(x) else
-                     repeat(x))
+                     itertools.repeat(x))
 
 def yimap(func, *args, **kwargs):
-    return imap(lambda *a: func(*a, **kwargs), *imap(iterify, args))
+    return itertools.imap(lambda *a: func(*a, **kwargs),
+                          *itertools.imap(iterify, args))
 
 def ymap(*args, **kwargs):
     return list(yimap(*args, **kwargs))
@@ -125,7 +129,7 @@ def ijoin_lists(l):
             if not all(ymap(isinstance, l, list)):
                 from tek.errors import MooException
                 raise MooException('Some elements aren\'t lists!')
-            for i in cumsum([0] + map(len, l[:-1])):
+            for i in np.cumsum([0] + map(len, l[:-1])):
                 l[i:i+1] = l[i]
         except Exception, e:
             logger.debug('ijoin_lists failed with: ' + str(e))
@@ -140,10 +144,10 @@ def index_of(pred, seq):
     return next((i for i, e in enumerate(seq) if pred(e)), None)
 
 def find(pred, seq, default=None):
-    return next(ifilter(pred, seq), default)
+    return next(itertools.ifilter(pred, seq), default)
 
 def find_iter(pred, it):
-    return next(ifilter(pred, it), None)
+    return next(itertools.ifilter(pred, it), None)
 
 def listdir_abs(dirname):
     return [os.path.join(dirname, f) for f in os.listdir(dirname)]
@@ -171,7 +175,7 @@ def maxlen(*seqs):
     return extremum_len(max, *seqs)
 
 def filterfalse_keys(pred, mydict):
-    newkeys = ifilterfalse(pred, mydict)
+    newkeys = itertools.filterfalse(pred, mydict)
     return dict([[k, mydict[k]] for k in newkeys])
 
 def list_diff(l1, l2):
