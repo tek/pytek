@@ -1,4 +1,4 @@
-__copyright__ = """ Copyright (c) 2009-2011 Torsten Schmits
+__copyright__ = """ Copyright (c) 2009-2012 Torsten Schmits
 
 This file is part of pytek. pytek is free software;
 you can redistribute it and/or modify it under the terms of the GNU General
@@ -15,11 +15,12 @@ Place, Suite 330, Boston, MA  02111-1307  USA
 
 """
 
-import time, copy
+import time
+import copy
+import itertools
 from re import compile as regex
 
-from tek import debug
-from tek.tools import *
+from tek.tools import decode
 from tek.errors import InternalError, InvalidInput, MooException
 from tek.io.terminal import terminal, ColorString
 
@@ -220,7 +221,7 @@ class SpecifiedChoice(SingleCharSimpleChoice):
     @property
     def prompt(self):
         text = copy.copy(self._text_pre)
-        for c in izip(self._numbers, self._choices, self._info):
+        for c in itertools.izip(self._numbers, self._choices, self._info):
             text.append(self._format_choice(*c))
         return text + self._text_post
 
