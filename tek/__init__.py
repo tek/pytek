@@ -1,4 +1,6 @@
-__copyright__ = """ Copyright (c) 2009-2011 Torsten Schmits
+from __future__ import absolute_import
+
+__copyright__ = """ Copyright (c) 2009-2012 Torsten Schmits
 
 This file is part of tek-utils. tek-utils is free software;
 you can redistribute it and/or modify it under the terms of the GNU General
