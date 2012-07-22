@@ -42,15 +42,18 @@ class Silencer(object):
     """ Context manager that suppresses output to stdout. """
     def __init__(self, active=True):
         self._active = active
+        self._file = os.tmpfile()
 
     def __enter__(self):
         if self._active:
-            sys.stdout = self
             stdouthandler.setLevel(logging.CRITICAL)
+            sys.stdout = self._file
+            sys.stderr = self._file
 
     def __exit__(self, exc_type, exc_val, exc_tb):
         if self._active:
             sys.stdout = sys.__stdout__
+            sys.stderr = sys.__stderr__
             stdouthandler.setLevel(logging.INFO)
 
     def write(self, data):
