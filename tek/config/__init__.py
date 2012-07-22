@@ -1,4 +1,4 @@
-__copyright__ = """ Copyright (c) 2009-2011 Torsten Schmits
+__copyright__ = """ Copyright (c) 2009-2012 Torsten Schmits
 
 This file is part of mootils. mootils is free software;
 you can redistribute it and/or modify it under the terms of the GNU General
@@ -15,12 +15,14 @@ Place, Suite 330, Boston, MA  02111-1307  USA
 
 """
 
-import re, ConfigParser, os
+import re
+import ConfigParser
+import os
 
 from tek.config.errors import *
 from tek.config.options import *
 from tek.config.options import ConfigOption, TypedConfigOption
-from tek import logger, debug
+from tek import logger
 
 __all__ = ['ConfigError', 'ConfigClient', 'Configurations', 'configurable',
            'lazy_configurable']
@@ -506,3 +508,12 @@ def lazy_configurable(set_class_attr=True, **sections):
         c.__conf_getattr__ = c.__getattr__ = conf_getattr
         return c
     return dec
+
+def config_home():
+    return os.environ.get('XDG_CONFIG_HOME',
+                          os.path.expanduser(os.path.join('~', '.config')))
+
+def standard_config_files(alias):
+    etc_dir = os.path.join('/etc', alias)
+    fname = '{}.conf'.format(alias)
+    return (os.path.join(etc_dir, fname), os.path.join(config_home(), fname),)
