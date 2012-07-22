@@ -1,4 +1,4 @@
-__copyright__ = """ Copyright (c) 2011 Torsten Schmits
+__copyright__ = """ Copyright (c) 2011-2012 Torsten Schmits
 
 This program is free software; you can redistribute it and/or modify it
 under the terms of the GNU General Public License as published by the
@@ -17,8 +17,6 @@ along with this program; if not, see <http://www.gnu.org/licenses/>.
 import glob
 
 from setuptools import setup, find_packages
-
-from tek.config.write import write_pkg_config
 
 setup(name='tek',
       version='0.1',
