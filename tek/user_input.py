@@ -203,6 +203,7 @@ class SpecifiedChoice(SingleCharSimpleChoice):
     @param info: list of lines to print after the corresponding
     element, without enumeration.
     """
+
     def __init__(self, elements, text_pre=None, text_post=None, simple=None,
                  info=None, *args, **kwargs):
         self._choices = elements
@@ -216,7 +217,8 @@ class SpecifiedChoice(SingleCharSimpleChoice):
                                         *args, **kwargs)
 
     def _format_choice(self, n, choice, info):
-        return [' [%d] %s' % (n, choice)] + [' ' * 5 + i for i in info]
+        pad = ' ' * (len(str(self._numbers[-1])) - len(str(n)))
+        return [' {}[{}] {}'.format(pad, n, choice)] + [' ' * 5 + i for i in info]
 
     @property
     def prompt(self):
