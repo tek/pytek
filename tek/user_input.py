@@ -217,8 +217,8 @@ class SpecifiedChoice(SingleCharSimpleChoice):
                                         *args, **kwargs)
 
     def _format_choice(self, n, choice, info):
-        pad = ' ' * (len(str(self._numbers[-1])) - len(str(n)))
-        return [' {}[{}] {}'.format(pad, n, choice)] + [' ' * 5 + i for i in info]
+        pad = u' ' * (len(str(self._numbers[-1])) - len(str(n)))
+        return [u' {}[{}] {}'.format(pad, n, choice)] + [' ' * 5 + i for i in info]
 
     @property
     def prompt(self):
