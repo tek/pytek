@@ -205,8 +205,12 @@ class SpecifiedChoice(SingleCharSimpleChoice):
     """
 
     def __init__(self, elements, text_pre=None, text_post=None, simple=None,
-                 info=None, *args, **kwargs):
+                 info=None, values=None, *args, **kwargs):
+        """ @param values: optional list of objects to return from if
+        selected by number
+        """
         self._choices = elements
+        self._values = values
         self._simple = simple or []
         self._text_pre = text_pre or []
         self._text_post = text_post or []
@@ -240,7 +244,7 @@ class SpecifiedChoice(SingleCharSimpleChoice):
         if i in self._simple:
             return i
         elif self._is_choice_index(i):
-            return self._choices[int(i) - 1]
+            return self._effective_values[int(i) - 1]
         elif not self._do_validate:
             return i
         else:
@@ -267,6 +271,10 @@ class SpecifiedChoice(SingleCharSimpleChoice):
         num = len(self._choices)
         self._numbers.append(num)
         self.add_element(num)
+
+    @property
+    def _effective_values(self):
+        return self._values or self._choices
 
 class LoopingInput(object):
     def __init__(self, terminate='q', overwrite=True, dispatch=[],
