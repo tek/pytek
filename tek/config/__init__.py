@@ -402,7 +402,10 @@ class Configurations(object):
                             params['action'] = 'store_false'
                             params['dest'] = name
                     add()
-        self.set_cli_config(parser.parse_args())
+        args = parser.parse_args()
+        if positional is not None and not getattr(args, positional[0]):
+            setattr(args, positional[0], None)
+        self.set_cli_config(args)
 
     @classmethod
     def set_cli_short_options(self, **options):
