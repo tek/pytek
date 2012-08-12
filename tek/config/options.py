@@ -67,7 +67,7 @@ class TypedConfigOption(ConfigOption):
     into a ConfigDict, setting a value is passed to the set() method,
     which then creates an object from the parameter from the config.
     """
-    def __init__(self, value_type, defaultvalue, **params):
+    def __init__(self, value_type, defaultvalue, factory=None, **params):
         """ Construct a TypedConfigOption.
             @param value_type: The type used to create new instances of
             the config value.
@@ -76,6 +76,7 @@ class TypedConfigOption(ConfigOption):
             @type defaultvalue: value_type
         """
         self.value_type = value_type
+        self._factory = factory
         self.set(defaultvalue)
         ConfigOption.__init__(self, **params)
 
@@ -93,6 +94,8 @@ class TypedConfigOption(ConfigOption):
             else: args = args[0] 
         if isinstance(args, self.value_type): 
             self.value = args
+        elif self._factory is not None:
+            self.value = self._factory(args)
         else:
             self.value = self.value_type(args)
 
