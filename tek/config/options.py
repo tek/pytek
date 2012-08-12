@@ -180,4 +180,4 @@ class PathConfigOption(UnicodeConfigOption):
         super(PathConfigOption, self).__init__(path or '', **params)
 
     def set(self, path):
-        self.value = os.path.expandvars(os.path.expanduser(path))
+        self.value = os.path.abspath(os.path.expandvars(os.path.expanduser(path)))
