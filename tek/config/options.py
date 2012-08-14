@@ -14,13 +14,17 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, see <http://www.gnu.org/licenses/>.
 """
 
-import os, glob
+import os
+import glob
+import re
 
 from tek import logger, debug
 from tek.tools import join_lists
+from tek.config.errors import ValueError as CValueError
 
 __all__ = ['BoolConfigOption', 'ListConfigOption', 'UnicodeConfigOption',
-           'PathConfigOption', 'PathListConfigOption']
+           'PathConfigOption', 'PathListConfigOption', 'FileSizeConfigOption',
+           'NumericalConfigOption']
 
 def boolify(value):
     """ Return a string's boolean value if it is a string and "true" or
@@ -67,6 +71,7 @@ class TypedConfigOption(ConfigOption):
     into a ConfigDict, setting a value is passed to the set() method,
     which then creates an object from the parameter from the config.
     """
+
     def __init__(self, value_type, defaultvalue, factory=None, **params):
         """ Construct a TypedConfigOption.
             @param value_type: The type used to create new instances of
@@ -86,18 +91,21 @@ class TypedConfigOption(ConfigOption):
         passed to value_type.__init__. args may be a tuple of 
         parameters.
         """
-        if isinstance(args, tuple):
-            if len(args) != 1: 
-                logger.debug('TypedConfigOption: len > 1')
-                self.value = self.value_type(*args)
-                return
-            else: args = args[0] 
-        if isinstance(args, self.value_type): 
-            self.value = args
-        elif self._factory is not None:
-            self.value = self._factory(args)
-        else:
-            self.value = self.value_type(args)
+        try:
+            if isinstance(args, tuple):
+                if len(args) != 1: 
+                    logger.debug('TypedConfigOption: len > 1')
+                    self.value = self.value_type(*args)
+                    return
+                else: args = args[0] 
+            if isinstance(args, self.value_type): 
+                self.value = args
+            elif self._factory is not None:
+                self.value = self._factory(args)
+            else:
+                self.value = self.value_type(args)
+        except ValueError:
+            raise CValueError(self.__class__, args)
 
     def __str__(self):
         return str(self.value)
@@ -114,6 +122,7 @@ class BoolConfigOption(TypedConfigOption):
     """ Specialization of TypedConfigOption for booleans, as they must
     be parsed from strings differently.
     """
+
     def __init__(self, defaultvalue=False, no=None, **params):
         """ Set the value_type to bool. """
         TypedConfigOption.__init__(self, bool, defaultvalue, **params)
@@ -180,4 +189,34 @@ class PathConfigOption(UnicodeConfigOption):
         super(PathConfigOption, self).__init__(path or '', **params)
 
     def set(self, path):
-        self.value = os.path.abspath(os.path.expandvars(os.path.expanduser(path)))
+        p = os.path
+        self.value = p.abspath(p.expandvars(p.expanduser(path)))
+
+class NumericalConfigOption(TypedConfigOption):
+    def __init__(self, defaultvalue=-1, value_type=int, **params):
+        super(NumericalConfigOption, self).__init__(value_type, defaultvalue,
+                                                    **params)
+
+class FileSizeConfigOption(NumericalConfigOption):
+    _prefixes = ['', 'k', 'm', 'g', 't', 'p']
+    _prefix_string = ''.join(_prefixes)
+    _regex = re.compile('(\d+(?:\.\d+)?)\s*([{}])b?$'.format(_prefix_string),
+                        re.I)
+
+    def __init__(self, defaultvalue=-1, **params):
+        super(FileSizeConfigOption, self).__init__(defaultvalue,
+                                                   value_type=float, **params)
+
+    def set(self, value):
+        if isinstance(value, basestring):
+            m = self._regex.match(value)
+            if not m:
+                raise CValueError(FileSizeConfigOption, value)
+            value, prefix = m.groups()
+            try:
+                pass
+            except IndexError:
+                raise CValueError(FileSizeConfigOption, value)
+            exponent = 3 * self._prefixes.index(prefix.lower())
+            value = float(value) * (10 ** exponent)
+        super(FileSizeConfigOption, self).set(value)
