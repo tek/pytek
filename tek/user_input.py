@@ -53,6 +53,12 @@ def is_digit(arg):
 class UserInput(object):
     def __init__(self, text, validator=None, validate=True, newline=True,
                  single=False, remove_text=False, initial_input=None, **kw):
+        """ @param remove_text: Clear the prompt lines after input has
+        been accepted.
+        @param newline: Print a newline after input has been accepted.
+        @param initial_input: Text that is inserted into the input
+        initially. Will be returned as input value.
+        """
         self._text = text
         self._validator = validator
         self._do_validate = validate
