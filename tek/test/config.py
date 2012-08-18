@@ -17,7 +17,8 @@ along with this program; if not, see <http://www.gnu.org/licenses/>.
 from unittest import TestCase
 
 from tek.config import Configurations, lazy_configurable, ConfigClient
-from tek.config.options import ListConfigOption, FileSizeConfigOption
+from tek.config.options import (ListConfigOption, FileSizeConfigOption,
+                                DictConfigOption)
 
 class ConfigTest(TestCase):
     def test_lazy_configurable(self):
@@ -40,3 +41,19 @@ class ConfigTest(TestCase):
                                        key1=FileSizeConfigOption('5.54G'))
         conf = ConfigClient('sec1')
         self.assertEqual(conf('key1'), 5540000000)
+
+    def test_dict(self):
+        class MyClass(object):
+
+            def __init__(self, arg):
+                self._arg = arg
+
+            def __eq__(self, other):
+                return self._arg == other._arg
+
+        Configurations.clear()
+        value = DictConfigOption('1:foo,2:boo', key_type=int, dictvalue_type=MyClass)
+        Configurations.register_config('test', 'sec1', key1=value)
+        conf = ConfigClient('sec1')
+        self.assertEqual(conf('key1'), {1: MyClass('foo'), 2: MyClass('boo')})
+        self.assertNotEqual(conf('key1'), {1: MyClass('afoo'), 2: MyClass('boo')})

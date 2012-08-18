@@ -22,10 +22,6 @@ from tek import logger, debug
 from tek.tools import join_lists
 from tek.config.errors import ValueError as CValueError
 
-__all__ = ['BoolConfigOption', 'ListConfigOption', 'UnicodeConfigOption',
-           'PathConfigOption', 'PathListConfigOption', 'FileSizeConfigOption',
-           'NumericalConfigOption']
-
 def boolify(value):
     """ Return a string's boolean value if it is a string and "true" or
     "false"(case insensitive), else just return the object.
@@ -193,19 +189,31 @@ class PathConfigOption(UnicodeConfigOption):
         self.value = p.abspath(p.expandvars(p.expanduser(path)))
 
 class NumericalConfigOption(TypedConfigOption):
+
     def __init__(self, defaultvalue=-1, value_type=int, **params):
         super(NumericalConfigOption, self).__init__(value_type, defaultvalue,
                                                     **params)
 
-class FileSizeConfigOption(NumericalConfigOption):
+class IntConfigOption(NumericalConfigOption):
+
+    def __init__(self, defaultvalue=-1, **params):
+        super(IntConfigOption, self).__init__(defaultvalue=defaultvalue,
+                                              value_type=int, **params)
+
+class FloatConfigOption(NumericalConfigOption):
+
+    def __init__(self, defaultvalue=-1., **params):
+        super(FloatConfigOption, self).__init__(defaultvalue=defaultvalue,
+                                                value_type=float, **params)
+
+class FileSizeConfigOption(FloatConfigOption):
     _prefixes = ['', 'k', 'm', 'g', 't', 'p']
     _prefix_string = ''.join(_prefixes)
     _regex = re.compile('(\d+(?:\.\d+)?)\s*([{}])b?$'.format(_prefix_string),
                         re.I)
 
     def __init__(self, defaultvalue=-1, **params):
-        super(FileSizeConfigOption, self).__init__(defaultvalue,
-                                                   value_type=float, **params)
+        super(FileSizeConfigOption, self).__init__(defaultvalue, **params)
 
     def set(self, value):
         if isinstance(value, basestring):
@@ -220,3 +228,24 @@ class FileSizeConfigOption(NumericalConfigOption):
             exponent = 3 * self._prefixes.index(prefix.lower())
             value = float(value) * (10 ** exponent)
         super(FileSizeConfigOption, self).set(value)
+
+class DictConfigOption(TypedConfigOption):
+
+    def __init__(self, defaultvalue=None, key_type=unicode,
+                 dictvalue_type=unicode, **params):
+        defaultvalue = defaultvalue or dict()
+        self.key_type = key_type
+        self.dictvalue_type = dictvalue_type
+        super(DictConfigOption, self).__init__(value_type=dict, defaultvalue=defaultvalue)
+
+    def set(self, value):
+        if isinstance(value, basestring):
+            items = value.split(',')
+            items = (item.split(':') for item in value.split(','))
+            value = dict(((self.key_type(k), self.dictvalue_type(v)) for k, v
+                          in items))
+        super(DictConfigOption, self).set(value)
+
+__all__ = ['BoolConfigOption', 'ListConfigOption', 'UnicodeConfigOption',
+           'PathConfigOption', 'PathListConfigOption', 'FileSizeConfigOption',
+           'IntConfigOption', 'FloatConfigOption', 'DictConfigOption']
