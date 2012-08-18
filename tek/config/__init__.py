@@ -23,6 +23,7 @@ from tek.config.errors import *
 from tek.config.options import *
 from tek.config.options import ConfigOption, TypedConfigOption
 from tek import logger
+from tek.tools import camelcaseify
 
 __all__ = ['ConfigError', 'ConfigClient', 'Configurations', 'configurable',
            'lazy_configurable']
@@ -31,6 +32,7 @@ class ConfigDict(dict):
     """ Dictionary that respects TypedConfigOptions when getting or
     setting.
     """
+
     def getitem(self, key):
         """ special method that is used in Configuration objects.
         Return the content of the TypedConfigOption wrapper, if it is
@@ -52,10 +54,13 @@ class ConfigDict(dict):
             if not (isinstance(value, basestring) or
                     isinstance(value, TypedConfigOption) or
                     value is None):
-                if isinstance(value, bool):
-                    value = BoolConfigOption(value)
-                else:
+                try:
+                    name = value.__class__.__name__
+                    typ = eval(camelcaseify(name) + 'ConfigOption')
+                except NameError:
                     value = TypedConfigOption(type(value), value)
+                else:
+                    value = typ(value)
             dict.__setitem__(self, key, value)
         else:
             if isinstance(self[key], TypedConfigOption):
@@ -87,6 +92,7 @@ class Configuration(object):
     register_config call, which correspond to the section names from the
     files.
     """
+
     def __init__(self, defaults):
         """ Initialize the dicts used to store the config and the list
         of section names that are added for defaults.
