@@ -1,4 +1,4 @@
-__copyright__ = """ Copyright (c) 2010-2011 Torsten Schmits
+__copyright__ = """ Copyright (c) 2010-2012 Torsten Schmits
 
 This program is free software; you can redistribute it and/or modify it
 under the terms of the GNU General Public License as published by the
@@ -25,6 +25,7 @@ stdouthandler.setLevel(logging.INFO)
 logger.addHandler(stdouthandler)
 if dodebug:
     logger.setLevel(logging.DEBUG)
+    stdouthandler.setLevel(logging.DEBUG)
 if os.environ.has_key('TEK_PYTHON_FILE_LOGGING'):
     try:
         handler = logging.FileHandler(os.path.expanduser('~/.python/log'))
