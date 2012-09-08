@@ -35,7 +35,7 @@ if os.environ.has_key('TEK_PYTHON_FILE_LOGGING'):
     except IOError:
         pass
 
-if os.environ.has_key('TEK_PYTHON_DEBUG_LOGGING'):
+if dodebug and os.environ.has_key('TEK_PYTHON_DEBUG_LOGGING'):
     debug_logger = logging.getLogger('tek-debug')
     debug_logger.setLevel(logging.DEBUG)
     try:
