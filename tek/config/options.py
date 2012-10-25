@@ -27,7 +27,7 @@ def boolify(value):
     "false"(case insensitive), else just return the object.
     """
     try:
-        return value.lower() == 'true'
+        return value.lower() in ['true', 'yes', '1']
     except:
         return bool(value)
 
@@ -240,7 +240,6 @@ class DictConfigOption(TypedConfigOption):
 
     def set(self, value):
         if isinstance(value, basestring):
-            items = value.split(',')
             items = (item.split(':') for item in value.split(','))
             value = dict(((self.key_type(k), self.dictvalue_type(v)) for k, v
                           in items))
