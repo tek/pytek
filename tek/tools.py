@@ -25,13 +25,12 @@ import threading
 import time
 import requests
 import itertools
+import functools
 
 import numpy as np
 
 from tek.log import stdouthandler, debug, logger
 from tek.io.terminal import terminal
-
-from itertools import compress
 
 def zip_fill(default, *seqs):
     # TODO itertools.zip_longest
@@ -265,3 +264,22 @@ def resolve_redirect(url):
 
 def lists_uniq(lists):
     return list(set(sum(lists, [])))
+
+class _WrapThread(threading.Thread):
+
+    def __init__(self, function):
+        threading.Thread.__init__(self)
+        self._function = function
+        self.result = None
+
+    def run(self):
+        self.result = self._function()
+
+def parallel_map(func, *a):
+    partials = [functools.partial(func, *args) for args in itertools.izip(*a)]
+    threads = map(_WrapThread, partials)
+    for thread in threads:
+        thread.start()
+    for thread in threads:
+        thread.join()
+    return [thread.result for thread in threads]
