@@ -1,4 +1,4 @@
-__copyright__ = """ Copyright (c) 2009-2012 Torsten Schmits
+__copyright__ = """ Copyright (c) 2009-2013 Torsten Schmits
 
 This file is part of mootils. mootils is free software;
 you can redistribute it and/or modify it under the terms of the GNU General
@@ -23,7 +23,7 @@ from tek.config.errors import *
 from tek.config.options import *
 from tek.config.options import ConfigOption, TypedConfigOption
 from tek import logger
-from tek.tools import camelcaseify
+from tek.tools import camelcaseify, find
 
 __all__ = ['ConfigError', 'ConfigClient', 'Configurations', 'configurable',
            'lazy_configurable']
@@ -371,46 +371,69 @@ class Configurations(object):
                              ' %s' % section)
 
     @classmethod
-    def parse_cli(self, positional=None):
+    def parse_cli(self, positional=()):
+        """ Add positional parameters, then define options and switches
+        based on the config. Parse command line parameters and set
+        optional positionals to None that haven't been specified at cli.
+        Write parsed options to config.
+        """
         from argparse import ArgumentParser
         parser = ArgumentParser()
-        arg = ['']
-        params = {}
         seen = []
-        if positional is not None:
-            parser.add_argument(positional[0], nargs=positional[1])
-        def add():
-            parser.add_argument(*arg, **params)
+        def positional_not_as_tuple():
+            """ backwards compatibility for parameter positional.
+            Previously, only one positional argument was possible.
+            """
+            return (isinstance(positional, (tuple, list)) and positional and
+                    not isinstance(positional[0], (tuple, list)))
+        if positional_not_as_tuple():
+            positional = (positional,)
+        for pos_arg in positional:
+            parser.add_argument(pos_arg[0], nargs=pos_arg[1])
+        def is_not_positional(name, value):
+            """ Check if either the config defines this value as
+            positional or the caller requested the parameter of that
+            name as positional
+            """
+            return (not (isinstance(value, ConfigOption) and value.positional)
+                    and (positional is None or not find(lambda p: p[0] == name,
+                                                        positional)))
+        def add_option(name, value):
+            arg = ['']
+            params = {}
+            def add():
+                parser.add_argument(*arg, **params)
+            switchname = name.replace('_', '-')
+            arg = ['--%s' % switchname]
+            params = {'default': None}
+            if self._cli_short_options.has_key(name):
+                arg.append('-%s' % self._cli_short_options[name])
+            if self._cli_params.has_key(name):
+                params.update(self._cli_params[name])
+            if isinstance(value, ConfigOption):
+                params.update(value.argparse_params)
+                if value.short:
+                    arg.append('-%s' % value.short)
+            if isinstance(value, BoolConfigOption):
+                params['action'] = 'store_true'
+                if value.no:
+                    add()
+                    params = {'default': None}
+                    arg = ['--no-%s' % switchname]
+                    params['action'] = 'store_false'
+                    params['dest'] = name
+            add()
         for config in self._configs.itervalues():
             for name, value in config.config.iteritems():
                 if name in seen:
                     continue
                 seen.append(name)
-                switchname = name.replace('_', '-')
-                if (not (isinstance(value, ConfigOption) and value.positional)
-                    and (positional is None or name != positional[0])):
-                    arg = ['--%s' % switchname]
-                    params = {'default': None}
-                    if self._cli_short_options.has_key(name):
-                        arg.append('-%s' % self._cli_short_options[name])
-                    if self._cli_params.has_key(name):
-                        params.update(self._cli_params[name])
-                    if isinstance(value, ConfigOption):
-                        params.update(value.argparse_params)
-                        if value.short:
-                            arg.append('-%s' % value.short)
-                    if isinstance(value, BoolConfigOption):
-                        params['action'] = 'store_true'
-                        if value.no:
-                            add()
-                            params = {'default': None}
-                            arg = ['--no-%s' % switchname]
-                            params['action'] = 'store_false'
-                            params['dest'] = name
-                    add()
+                if is_not_positional(name, value):
+                    add_option(name, value)
         args = parser.parse_args()
-        if positional is not None and not getattr(args, positional[0]):
-            setattr(args, positional[0], None)
+        for pos_arg in positional:
+            if pos_arg is not None and not getattr(args, pos_arg[0]):
+                setattr(args, pos_arg[0], None)
         self.set_cli_config(args)
 
     @classmethod
