@@ -260,7 +260,7 @@ def free_space_in_dir(dir):
     return f.f_bfree * f.f_bsize
 
 def resolve_redirect(url):
-    return requests.get(url).url
+    return requests.get(url, stream=True).url
 
 def lists_uniq(lists):
     return list(set(sum(lists, [])))
