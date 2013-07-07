@@ -548,4 +548,5 @@ def config_home():
 def standard_config_files(alias):
     etc_dir = os.path.join('/etc', alias)
     fname = '{}.conf'.format(alias)
-    return (os.path.join(etc_dir, fname), os.path.join(config_home(), fname),)
+    return (os.path.join('/etc', fname), os.path.join(etc_dir, fname),
+            os.path.join(config_home(), fname),)
