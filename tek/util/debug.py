@@ -1,4 +1,4 @@
-__copyright__ = """ Copyright (c) 2010-2011 Torsten Schmits
+__copyright__ = """ Copyright (c) 2010-2013 Torsten Schmits
 
 This program is free software; you can redistribute it and/or modify it
 under the terms of the GNU General Public License as published by the
@@ -18,4 +18,4 @@ from os import environ
 
 __all__ = ['dodebug']
 
-dodebug = environ.has_key("PYTHONDEBUG")
+dodebug = "PYTHONDEBUG" in environ.keys()

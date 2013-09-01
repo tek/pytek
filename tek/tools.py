@@ -1,6 +1,6 @@
 from __future__ import print_function, absolute_import
 
-__copyright__ = """ Copyright (c) 2009-2012 Torsten Schmits
+__copyright__ = """ Copyright (c) 2009-2013 Torsten Schmits
 
 This file is part of pytek. pytek is free software;
 you can redistribute it and/or modify it under the terms of the GNU General
@@ -133,7 +133,7 @@ def ijoin_lists(l):
                 raise MooException('Some elements aren\'t lists!')
             for i in np.cumsum([0] + map(len, l[:-1])):
                 l[i:i+1] = l[i]
-        except Exception, e:
+        except Exception as e:
             logger.debug('ijoin_lists failed with: ' + str(e))
     return l
 
@@ -142,8 +142,11 @@ def pairs(list1, list2):
         for e2 in list2:
             yield e1, e2
 
+def indices_of(pred, seq):
+    return (i for i, e in enumerate(seq) if pred(e))
+
 def index_of(pred, seq):
-    return next((i for i, e in enumerate(seq) if pred(e)), None)
+    return next(indices_of(pred, seq), None)
 
 def find(pred, seq, default=None):
     return next(itertools.ifilter(pred, seq), default)
@@ -205,7 +208,7 @@ class ProgressPrinter(threading.Thread):
     def _print_progress(self):
         if os.path.isfile(self._destination):
             self._file_size = os.path.getsize(self._destination)
-            text = u'{:.2%} ({}k)'.format(self._percent, self._progress)
+            text = '{:.2%} ({}k)'.format(self._percent, self._progress)
             terminal.pop()
             terminal.push(text)
             terminal.flush()

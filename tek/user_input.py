@@ -1,4 +1,4 @@
-__copyright__ = """ Copyright (c) 2009-2012 Torsten Schmits
+__copyright__ = """ Copyright (c) 2009-2013 Torsten Schmits
 
 This file is part of pytek. pytek is free software;
 you can redistribute it and/or modify it under the terms of the GNU General
@@ -227,8 +227,8 @@ class SpecifiedChoice(SingleCharSimpleChoice):
                                         *args, **kwargs)
 
     def _format_choice(self, n, choice, info):
-        pad = u' ' * (len(str(self._numbers[-1])) - len(str(n)))
-        return [u' {}[{}] {}'.format(pad, n, choice)] + [' ' * 5 + i for i in info]
+        pad = ' ' * (len(str(self._numbers[-1])) - len(str(n)))
+        return [' {}[{}] {}'.format(pad, n, choice)] + [' ' * 5 + i for i in info]
 
     @property
     def prompt(self):
