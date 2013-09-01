@@ -1,4 +1,4 @@
-__copyright__ = """ Copyright (c) 2011-2012 Torsten Schmits
+__copyright__ = """ Copyright (c) 2011-2013 Torsten Schmits
 
 This program is free software; you can redistribute it and/or modify it
 under the terms of the GNU General Public License as published by the
@@ -19,6 +19,10 @@ import glob
 from setuptools import setup, find_packages
 
 setup(name='tek',
-      version='0.1',
+      version='1.0.0',
+      author='Torsten Schmits',
+      author_email='torstenschmits@gmail.com',
+      license='GPLv3',
+      long_description='helper lib',
       packages=find_packages(exclude=['test', 'scripts']),
       scripts=glob.glob('scripts/*'))
