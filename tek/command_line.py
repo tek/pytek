@@ -1,6 +1,6 @@
 from __future__ import print_function
 
-__copyright__ = """ Copyright (c) 2009-2011 Torsten Schmits
+__copyright__ = """ Copyright (c) 2009-2013 Torsten Schmits
 
 This file is part of pytek. pytek is free software;
 you can redistribute it and/or modify it under the terms of the GNU General
@@ -19,8 +19,8 @@ Place, Suite 330, Boston, MA  02111-1307  USA
 
 from tek.io.terminal import TerminalController
 from tek.tools import str_list, pretty, short
-from dispatch import generic
-from dispatch.strategy import Signature
+
+from multimethods import multimethod
 
 class CommandLine(object):
     term = TerminalController()
@@ -57,17 +57,11 @@ class CommandLine(object):
     def recursive_print(self, printer, msgs):
         return self(str_list(msgs, j=' ', printer=printer))
 
-    @generic()
-    def print_(self, msg):
-        """ print stuff with a nested prompt.
-
-        """
-
-    @print_.when(Signature(msg=list))
+    @multimethod(list)
     def print_(self, msg):
         map(self.print_, msg)
 
-    @print_.when(Signature())
+    @multimethod(object)
     def print_(self, msg):
         map(self.print_line, unicode(msg).splitlines())
 
