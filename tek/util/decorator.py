@@ -1,4 +1,4 @@
-__copyright__ = """ Copyright (c) 2010-2012 Torsten Schmits
+__copyright__ = """ Copyright (c) 2010-2013 Torsten Schmits
 
 This program is free software; you can redistribute it and/or modify it
 under the terms of the GNU General Public License as published by the
@@ -15,9 +15,6 @@ along with this program; if not, see <http://www.gnu.org/licenses/>.
 """
 
 import functools
-
-from dispatch import generic
-from dispatch.strategy import Signature
 
 def generated_list(func):
     @functools.wraps(func)
