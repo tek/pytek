@@ -1,4 +1,4 @@
-__copyright__ = """ Copyright (c) 2010-2012 Torsten Schmits
+__copyright__ = """ Copyright (c) 2010-2013 Torsten Schmits
 
 This program is free software; you can redistribute it and/or modify it
 under the terms of the GNU General Public License as published by the
@@ -21,8 +21,7 @@ import os
 import re
 from time import sleep
 
-from dispatch import generic
-from dispatch.strategy import Signature
+from multimethods import multimethod
 
 from tek.log import logger, debug
 
@@ -341,36 +340,32 @@ class Terminal(object):
             if not Terminal._locks:
                 self.unlock()
 
-    @generic()
+    @multimethod(unicode)
     def write(self, string):
-        pass
-
-    @write.when(Signature(string=unicode))
-    def write_unicode(self, string):
         self.write(string.encode('utf-8'))
 
-    @write.when(Signature(string=str))
-    def write_string(self, string):
+    @multimethod(str)
+    def write(self, string):
         self.terminal_controller.write(string)
 
-    @generic()
+    @multimethod()
     def write_lines(self, data='', **kw):
         pass
 
-    @write_lines.when(Signature(data=unicode))
-    def write_lines_unicode(self, data=unicode(''), **kw):
+    @multimethod(unicode)
+    def write_lines(self, data=unicode(''), **kw):
         self.write_lines(data.encode('utf-8'), **kw)
 
-    @write_lines.when(Signature(data=str))
-    def write_lines_string(self, data='', **kw):
+    @multimethod(str)
+    def write_lines(self, data='', **kw):
         lines = data.splitlines() if data else ['']
         if len(lines) == 1:
             self.write_line(lines[0], **kw)
         else:
             self.write_lines(lines, **kw)
 
-    @write_lines.when(Signature(data=list) | Signature(data=tuple))
-    def write_lines_seq(self, data, **kw):
+    @multimethod(list)
+    def write_lines(self, data, **kw):
         if any(isinstance(e, LineBreak) for e in data):
             self.write_lines(split_at_linebreak(data))
         elif any(isinstance(e, ColorString) for e in data):
@@ -394,7 +389,7 @@ class Terminal(object):
             self.write_lines(break_color_string_list(data, self._cols),
                              check_length=False)
         else:
-            self.write_lines(u''.join(map(unicode, data)), check_length=False)
+            self.write_lines(''.join(map(unicode, data)), check_length=False)
 
     def clear_line(self):
         """ Delete the current line, but don't move up """
@@ -472,16 +467,12 @@ class ColorString(object):
         return (ColorString(self.string[:length], self.format),
                 ColorString(self.string[length:], self.format))
 
-    @generic()
+    @multimethod(basestring)
     def __radd__(self, other):
-        pass
-
-    @__radd__.when(Signature(other=basestring))
-    def radd_str(self, other):
         return [other, self]
 
-    @__radd__.when(Signature(other=list))
-    def radd_list(self, other):
+    @multimethod(list)
+    def __radd__(self, other):
         return list.__add__(other, [self])
 
 class LineBreak(ColorString):
@@ -496,7 +487,7 @@ def split_string(s, length):
 
 def break_color_string_list(data, cols):
     lines = []
-    current = u''
+    current = ''
     width = 0
     for s in data:
         while width + len(s) > cols:
