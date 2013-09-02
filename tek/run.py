@@ -1,4 +1,4 @@
-__copyright__ = """ Copyright (c) 2010-2012 Torsten Schmits
+__copyright__ = """ Copyright (c) 2010-2013 Torsten Schmits
 
 This program is free software; you can redistribute it and/or modify it
 under the terms of the GNU General Public License as published by the
@@ -15,8 +15,6 @@ along with this program; if not, see <http://www.gnu.org/licenses/>.
 """
 
 import signal, sys, threading
-
-from dispatch.interfaces import AmbiguousMethod, NoApplicableMethods
 
 from tek import dodebug, logger
 from tek.errors import MooException
@@ -68,22 +66,6 @@ def moo_run(func, handle_sigint=True, *a, **kw):
         if handle_sigint:
             SignalManager.instance.sigint()
         func(*a, **kw)
-    except AmbiguousMethod as e:
-        parms = (e.args[1][0].__class__.__name__,
-                 str_list(a.__class__.__name__ for a in e.args[1][1:]))
-        text = 'dispatch ambiguity on a {} with argument types ({})'
-        print(text.format(*parms))
-        print('ambiguous functions were: ' + str_list(f[1].__name__ for f in
-                                                    e.args[0]))
-        if dodebug:
-            raise
-    except NoApplicableMethods as e:
-        parms = (e.args[0][0].__class__.__name__,
-                 str_list(a.__class__.__name__ for a in e.args[0][1:]))
-        text = 'no applicable dispatch method on a {} with argument types ({})'
-        print(text.format(*parms))
-        if dodebug:
-            raise
     except MooException as e:
         logger.error(e)
     except Exception as e:
