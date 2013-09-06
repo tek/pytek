@@ -25,4 +25,5 @@ setup(name='tek',
       license='GPLv3',
       long_description='helper lib',
       packages=find_packages(exclude=['test', 'scripts']),
-      scripts=glob.glob('scripts/*'))
+      scripts=glob.glob('scripts/*'),
+      install_requires=['multimethods'])
