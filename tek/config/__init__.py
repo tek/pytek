@@ -16,8 +16,13 @@ Place, Suite 330, Boston, MA  02111-1307  USA
 """
 
 import re
-import ConfigParser
 import os
+import sys
+
+if sys.version_info < (3, 0):
+    import ConfigParser as configparser
+else:
+    import configparser
 
 from tek.config.errors import *
 from tek.config.options import *
@@ -27,6 +32,7 @@ from tek.tools import camelcaseify, find
 
 __all__ = ['ConfigError', 'ConfigClient', 'Configurations', 'configurable',
            'lazy_configurable']
+
 
 class ConfigDict(dict):
     """ Dictionary that respects TypedConfigOptions when getting or
@@ -50,8 +56,8 @@ class ConfigDict(dict):
             to set().
             If the key is new, try to create a TypedConfigOption.
         """
-        if not self.has_key(key):
-            if not (isinstance(value, basestring) or
+        if key not in self:
+            if not (isinstance(value, str) or
                     isinstance(value, TypedConfigOption) or
                     value is None):
                 try:
@@ -73,8 +79,9 @@ class ConfigDict(dict):
 
     def update(self, newdict):
         """ Convenience overload. """
-        for key, value in dict(newdict).iteritems():
+        for key, value in dict(newdict).items():
             self[key] = value
+
 
 class Configuration(object):
     """ Container for several dictionaries representing configuration
@@ -106,7 +113,7 @@ class Configuration(object):
 
     def __getitem__(self, key):
         """ Emulate read-only container behaviour. """
-        if not self.config.has_key(key):
+        if key not in self.config:
             raise NoSuchOptionError(key)
         return self.config.getitem(key)
 
@@ -115,7 +122,7 @@ class Configuration(object):
 
     def has_key(self, key):
         """ Emulate read-only container behaviour. """
-        return self.config.has_key(key)
+        return key in self.config
 
     @property
     def info(self):
@@ -162,9 +169,9 @@ class Configuration(object):
             @type values: optparse.Values
         """
         self.config_from_cli.update([key, value] for key, value in 
-                                    values.__dict__.iteritems() 
+                                    values.__dict__.items() 
                                     if value is not None and
-                                    self.config_defaults.has_key(key))
+                                    key in self.config_defaults)
 
     @config_update
     def set_file_config(self, file_config):
@@ -184,10 +191,10 @@ class Configuration(object):
         """
         if not self.has_section(section):
             raise NoSuchSectionError(section)
-        elif self.config_from_file.has_key(section) and \
-             self.config_from_file[section].has_key(key): 
+        elif section in self.config_from_file and \
+             key in self.config_from_file[section]: 
             return self.config_from_file[section][key]
-        elif not self.config_defaults[section].has_key(key): 
+        elif key not in self.config_defaults[section]: 
             raise NoSuchOptionError(key)
         else:
             return self.config_defaults[section][key]
@@ -195,6 +202,7 @@ class Configuration(object):
     def has_section(self, name):
         """ Return True if a section with name has been added. """
         return name in self.sections
+
 
 class ConfigClient(object):
     """ Standard read-only proxy for a Configuration. """
@@ -232,13 +240,14 @@ class ConfigClient(object):
         if self._config is None:
             self._config = config
 
+
 class ConfigurationFactory(object):
     """ Construct Configuration objects out of a section of the given
     config files.
     """
     def __init__(self, allow_files=True):
         self.files = []
-        self.config_parser = ConfigParser.SafeConfigParser()
+        self.config_parser = configparser.SafeConfigParser()
         self._allow_files = allow_files
 
     def add_files(self, files):
@@ -254,11 +263,12 @@ class ConfigurationFactory(object):
             try:
                 file_config = dict(self.config_parser.items(section))
                 config.set_file_config(file_config)
-            except ConfigParser.NoSectionError as e:
-                logger.debug('ConfigParser: ' + str(e))
-            except ConfigParser.Error as e:
-                logger.error('ConfigParser: ' + str(e))
+            except configparser.NoSectionError as e:
+                logger.debug('configparser: ' + str(e))
+            except configparser.Error as e:
+                logger.error('configparser: ' + str(e))
         return config
+
 
 class Configurations(object):
     """ Program-wide register of Configuration instances.
@@ -285,13 +295,13 @@ class Configurations(object):
 
     @classmethod
     def create_alias(cls, alias):
-        if not cls._factories.has_key(alias):
+        if alias not in cls._factories:
             cls._factories[alias] = ConfigurationFactory(cls.allow_files)
 
     @classmethod
     def register_files(cls, alias, *files):
         cls.create_alias(alias)
-        files = map(os.path.expanduser, files)
+        files = list(map(os.path.expanduser, files))
         cls._factories[alias].add_files(files)
 
     @classmethod
@@ -303,7 +313,7 @@ class Configurations(object):
         created now.
         """
         cls.create_alias(file_alias)
-        if not cls._configs.has_key(section):
+        if section not in cls._configs:
             config = cls._factories[file_alias].create(section, defaults)
             if cls._cli_config:
                 config.set_cli_config(cls._cli_config)
@@ -315,7 +325,7 @@ class Configurations(object):
     @classmethod
     def set_cli_config(cls, values):
         cls._cli_config = values
-        for config in cls._configs.values():
+        for config in list(cls._configs.values()):
             config.set_cli_config(values)
         cls.notify_all_clients()
 
@@ -327,13 +337,13 @@ class Configurations(object):
         try: 
             client.connect(cls._configs[client.name])
         except KeyError:
-            if not cls._pending_clients.has_key(client.name):
+            if client.name not in cls._pending_clients:
                 cls._pending_clients[client.name] = [ ]
             cls._pending_clients[client.name].append(client)
 
     @classmethod
     def notify_all_clients(cls):
-        for name in cls._pending_clients.keys():
+        for name in list(cls._pending_clients.keys()):
             cls.notify_clients(name)
 
     @classmethod
@@ -342,8 +352,8 @@ class Configurations(object):
         registered before their target and clear the client dict item.
 
         """
-        if cls._configs.has_key(name):
-            if cls._pending_clients.has_key(name):
+        if name in cls._configs:
+            if name in cls._pending_clients:
                 for client in cls._pending_clients[name]: 
                     client.connect(cls._configs[name])
                 del cls._pending_clients[name]
@@ -355,7 +365,7 @@ class Configurations(object):
     @classmethod
     def override_defaults(self, section, **defaults):
         if self.allow_override:
-            if self._configs.has_key(section):
+            if section in self._configs:
                 self._configs[section].set_defaults(defaults)
             else:
                 logger.debug('Tried to override defaults in nonexistent section'
@@ -364,7 +374,7 @@ class Configurations(object):
     @classmethod
     def override(self, section, **values):
         if self.allow_override:
-            if self._configs.has_key(section):
+            if section in self._configs:
                 self._configs[section].override(**values)
             else:
                 logger.debug('Tried to override values in nonexistent section'
@@ -406,9 +416,9 @@ class Configurations(object):
             switchname = name.replace('_', '-')
             arg = ['--%s' % switchname]
             params = {'default': None}
-            if self._cli_short_options.has_key(name):
+            if name in self._cli_short_options:
                 arg.append('-%s' % self._cli_short_options[name])
-            if self._cli_params.has_key(name):
+            if name in self._cli_params:
                 params.update(self._cli_params[name])
             if isinstance(value, ConfigOption):
                 params.update(value.argparse_params)
@@ -423,8 +433,8 @@ class Configurations(object):
                     params['action'] = 'store_false'
                     params['dest'] = name
             add()
-        for config in self._configs.itervalues():
-            for name, value in config.config.iteritems():
+        for config in self._configs.values():
+            for name, value in config.config.items():
                 if name in seen:
                     continue
                 seen.append(name)
@@ -464,18 +474,19 @@ class Configurations(object):
     def write_config(self, filename):
         def write_section(f, section, config):
             f.write('[{0}]\n'.format(section))
-            for key, value in config.config.iteritems():
+            for key, value in config.config.items():
                 if not (isinstance(value, ConfigOption) and value.positional):
                     if isinstance(value, ConfigOption) and value.help:
                         f.write('\n# {0}\n'.format(value.help))
                     f.write('# {0} = {1:s}\n'.format(key, value))
             f.write('\n')
         with open(filename, 'w') as f:
-            if self._configs.has_key('global'):
+            if 'global' in self._configs:
                 write_section(f, 'global', self._configs['global'])
-            for section, config in self._configs.iteritems():
+            for section, config in self._configs.items():
                 if not section == 'global':
                     write_section(f, section, config)
+
 
 def configurable(prefix=False, **sections):
     """ Class decorator, to be called with keyword arguments each
@@ -490,7 +501,7 @@ def configurable(prefix=False, **sections):
     """
     def dec(c):
         def set_conf(*a, **kw):
-            for section, keys in sections.iteritems():
+            for section, keys in sections.items():
                 conf = ConfigClient(section)
                 for k in keys:
                     attrname = '_{0}'.format(k)
@@ -506,6 +517,7 @@ def configurable(prefix=False, **sections):
     return dec
 
 conf_attr_re = re.compile(r'_((?P<section>.+)__)?(?P<key>.+)')
+
 
 def lazy_configurable(set_class_attr=True, **sections):
     """ Same class decorator as configurable, with the difference that
@@ -541,9 +553,11 @@ def lazy_configurable(set_class_attr=True, **sections):
         return c
     return dec
 
+
 def config_home():
     return os.environ.get('XDG_CONFIG_HOME',
                           os.path.expanduser(os.path.join('~', '.config')))
+
 
 def standard_config_files(alias):
     etc_dir = os.path.join('/etc', alias)

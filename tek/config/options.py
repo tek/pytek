@@ -1,4 +1,4 @@
-__copyright__ = """ Copyright (c) 2011-2012 Torsten Schmits
+__copyright__ = """ Copyright (c) 2011-2013 Torsten Schmits
 
 This program is free software; you can redistribute it and/or modify it
 under the terms of the GNU General Public License as published by the
@@ -18,7 +18,7 @@ import os
 import glob
 import re
 
-from tek import logger, debug
+from tek import logger
 from tek.tools import join_lists
 from tek.config.errors import ValueError as CValueError
 
@@ -143,10 +143,10 @@ class ListConfigOption(TypedConfigOption):
         TypedConfigOption.__init__(self, list, defaultvalue, **params)
 
     def set(self, value):
-        if isinstance(value, basestring):
+        if isinstance(value, str):
             value = value.split(self._splitchar)
         if self._element_type is not None:
-            value = map(self._element_type, value)
+            value = list(map(self._element_type, value))
         self.value = value
 
     @property
@@ -166,7 +166,7 @@ class PathListConfigOption(ListConfigOption):
 
     def set(self, value):
         super(PathListConfigOption, self).set(value)
-        globbed = map(glob.glob, [v.value for v in self.value])
+        globbed = list(map(glob.glob, [v.value for v in self.value]))
         self.value = join_lists(globbed)
 
     @property
@@ -175,10 +175,7 @@ class PathListConfigOption(ListConfigOption):
 
 class UnicodeConfigOption(TypedConfigOption):
     def __init__(self, default, **params):
-        TypedConfigOption.__init__(self, unicode, default, **params)
-
-    def __str__(self):
-        return self.value.encode('utf-8')
+        TypedConfigOption.__init__(self, str, default, **params)
 
 class PathConfigOption(UnicodeConfigOption):
     def __init__(self, path=None, **params):
@@ -216,7 +213,7 @@ class FileSizeConfigOption(FloatConfigOption):
         super(FileSizeConfigOption, self).__init__(defaultvalue, **params)
 
     def set(self, value):
-        if isinstance(value, basestring):
+        if isinstance(value, str):
             m = self._regex.match(value)
             if not m:
                 raise CValueError(FileSizeConfigOption, value)
@@ -231,15 +228,15 @@ class FileSizeConfigOption(FloatConfigOption):
 
 class DictConfigOption(TypedConfigOption):
 
-    def __init__(self, defaultvalue=None, key_type=unicode,
-                 dictvalue_type=unicode, **params):
+    def __init__(self, defaultvalue=None, key_type=str,
+                 dictvalue_type=str, **params):
         defaultvalue = defaultvalue or dict()
         self.key_type = key_type
         self.dictvalue_type = dictvalue_type
         super(DictConfigOption, self).__init__(value_type=dict, defaultvalue=defaultvalue)
 
     def set(self, value):
-        if isinstance(value, basestring):
+        if isinstance(value, str):
             items = (item.split(':') for item in value.split(','))
             value = dict(((self.key_type(k), self.dictvalue_type(v)) for k, v
                           in items))

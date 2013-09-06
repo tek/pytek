@@ -1,6 +1,4 @@
-from __future__ import absolute_import
-
-__copyright__ = """ Copyright (c) 2012 Torsten Schmits
+__copyright__ = """ Copyright (c) 2012-2013 Torsten Schmits
 
 This program is free software; you can redistribute it and/or modify it
 under the terms of the GNU General Public License as published by the

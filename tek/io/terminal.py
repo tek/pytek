@@ -23,13 +23,15 @@ from time import sleep
 
 from multimethods import multimethod
 
-from tek.log import logger, debug
+from tek.log import logger
+from functools import reduce
+
 
 class TerminalController(object):
     """
     A class that can be used to portably generate formatted output to
-    a terminal.  
-    
+    a terminal.
+
     `TerminalController` defines a set of instance variables whose
     values are initialized to the control sequence necessary to
     perform a given action.  These can be simply included in normal
@@ -89,11 +91,11 @@ class TerminalController(object):
 
     # Foreground colors:
     BLACK = BLUE = GREEN = CYAN = RED = MAGENTA = YELLOW = WHITE = ''
-    
+
     # Background colors:
     BG_BLACK = BG_BLUE = BG_GREEN = BG_CYAN = ''
     BG_RED = BG_MAGENTA = BG_YELLOW = BG_WHITE = ''
-    
+
     _STRING_CAPABILITIES = """
     BOL=cr UP=cuu1 DOWN=cud1 LEFT=cub1 RIGHT=cuf1
     CLEAR_SCREEN=clear CLEAR_EOL=el CLEAR_BOL=el1 CLEAR_EOS=ed BOLD=bold
@@ -111,21 +113,26 @@ class TerminalController(object):
         assumed to be a dumb terminal (i.e., have no capabilities).
         """
         # Curses isn't available on all platforms
-        try: import curses
-        except: return
+        try:
+            import curses
+        except:
+            return
 
         # If the stream isn't a tty, then assume it has no capabilities.
-        if not hasattr(term_stream, 'isatty') or not term_stream.isatty(): return
+        if not hasattr(term_stream, 'isatty') or not term_stream.isatty():
+            return
 
         # Check the terminal type.  If we fail, then assume that the
         # terminal has no capabilities.
-        try: curses.setupterm()
-        except: return
+        try:
+            curses.setupterm()
+        except:
+            return
 
         # Look up numeric capabilities.
         self.COLS = curses.tigetnum('cols')
         self.LINES = curses.tigetnum('lines')
-        
+
         # Look up string capabilities.
         for capability in self._STRING_CAPABILITIES:
             (attrib, cap_name) = capability.split('=')
@@ -134,20 +141,24 @@ class TerminalController(object):
         # Colors
         set_fg = self._tigetstr('setf')
         if set_fg:
-            for i,color in zip(range(len(self._COLORS)), self._COLORS):
-                setattr(self, color, curses.tparm(set_fg, i) or '')
+            for i, color in enumerate(self._COLORS):
+                setattr(self, color,
+                        curses.tparm(bytes(set_fg, 'utf8'), i) or '')
         set_fg_ansi = self._tigetstr('setaf')
         if set_fg_ansi:
-            for i,color in zip(range(len(self._ANSICOLORS)), self._ANSICOLORS):
-                setattr(self, color, curses.tparm(set_fg_ansi, i) or '')
+            for i, color in enumerate(self._ANSICOLORS):
+                setattr(self, color,
+                        curses.tparm(bytes(set_fg_ansi, 'utf8'), i) or '')
         set_bg = self._tigetstr('setb')
         if set_bg:
-            for i,color in zip(range(len(self._COLORS)), self._COLORS):
-                setattr(self, 'BG_'+color, curses.tparm(set_bg, i) or '')
+            for i, color in enumerate(self._COLORS):
+                setattr(self, 'BG_'+color,
+                        curses.tparm(bytes(set_bg, 'utf8'), i) or '')
         set_bg_ansi = self._tigetstr('setab')
         if set_bg_ansi:
-            for i,color in zip(range(len(self._ANSICOLORS)), self._ANSICOLORS):
-                setattr(self, 'BG_'+color, curses.tparm(set_bg_ansi, i) or '')
+            for i, color in enumerate(self._ANSICOLORS):
+                setattr(self, 'BG_'+color,
+                        curses.tparm(bytes(set_bg_ansi, 'utf8'), i) or '')
 
     def _tigetstr(self, cap_name):
         # String capabilities can include "delays" of the form "$<2>".
@@ -155,7 +166,7 @@ class TerminalController(object):
         # these, so strip them out.
         import curses
         cap = curses.tigetstr(cap_name) or ''
-        return re.sub(r'\$<\d+>[/*]?', '', cap)
+        return re.sub(r'\$<\d+>[/*]?', '', str(cap))
 
     def render(self, template):
         """
@@ -167,8 +178,7 @@ class TerminalController(object):
 
     def _render_sub(self, match):
         s = match.group()
-        if s == '$$': return s
-        else: return getattr(self, s[2:-1])
+        return getattr(self, s[2:-1]) if s == '$$' else s
 
     def write(self, stuff):
         sys.stdout.write(stuff)
@@ -183,6 +193,7 @@ right = 'RIGHT'
 start = 'BOL'
 end = 'EOL'
 
+
 class Terminal(object):
     class InputReader(object):
         _directions = [None, right, left]
@@ -190,6 +201,7 @@ class Terminal(object):
             68: -1,
             67: 1
         }
+
         def __init__(self, terminal, single=False, initial=None):
             self._terminal = terminal
             self._single = single
@@ -202,7 +214,8 @@ class Terminal(object):
             newattr[3] &= ~termios.ICANON & ~termios.ECHO
             termios.tcsetattr(self._fd, termios.TCSANOW, newattr)
             self._oldflags = fcntl.fcntl(self._fd, fcntl.F_GETFL)
-            fcntl.fcntl(self._fd, fcntl.F_SETFL, self._oldflags | os.O_NONBLOCK)
+            fcntl.fcntl(self._fd, fcntl.F_SETFL, self._oldflags |
+                        os.O_NONBLOCK)
             self._done = False
             self._cursor_position = len(self._input)
             self._terminal.write(''.join(self._input))
@@ -257,7 +270,7 @@ class Terminal(object):
                     elif char3 in [50, 53, 54]:
                         fourth = ord(self._char)
                         logger.debug('fourth ordinal: %d' % fourth)
-                    elif self._move_keys.has_key(char3):
+                    elif char3 in self._move_keys:
                         self._move_cursor(self._move_keys[char3])
 
         def _input_content(self, char):
@@ -340,19 +353,19 @@ class Terminal(object):
             if not Terminal._locks:
                 self.unlock()
 
-    @multimethod(unicode)
-    def write(self, string):
-        self.write(string.encode('utf-8'))
-
     @multimethod(str)
+    def write(self, string):
+        self.write(string.encode('utf8'))
+
+    @multimethod(bytes)
     def write(self, string):
         self.terminal_controller.write(string)
 
-    @multimethod(unicode)
-    def write_lines(self, data=unicode(''), **kw):
+    @multimethod(str)
+    def write_lines(self, data=str(''), **kw):
         self.write_lines(data.encode('utf-8'), **kw)
 
-    @multimethod(str)
+    @multimethod(bytes)
     def write_lines(self, data='', **kw):
         lines = data.splitlines() if data else ['']
         if len(lines) == 1:
@@ -385,7 +398,7 @@ class Terminal(object):
             self.write_lines(break_color_string_list(data, self._cols),
                              check_length=False)
         else:
-            self.write_lines(''.join(map(unicode, data)), check_length=False)
+            self.write_lines(''.join(map(str, data)), check_length=False)
 
     def clear_line(self):
         """ Delete the current line, but don't move up """
@@ -427,14 +440,15 @@ class Terminal(object):
                 Terminal._locks[-1] += 1
 
     def pop(self, count=1):
-        for i in xrange(count):
+        for i in range(count):
             if Terminal._stack:
                 self.delete_lines(Terminal._stack.pop())
         if Terminal._locks:
             Terminal._locks[-1] -= count
- 
+
     def flush(self):
         self.terminal_controller.flush()
+
 
 class ColorString(object):
     """ String with formatting, preserving length. """
@@ -443,15 +457,12 @@ class ColorString(object):
     def __init__(self, strng, format):
         self.string = strng
         self.format = format
-        
+
     def __len__(self):
         return len(self.string)
 
     def __str__(self):
-        return self.format + self.string + self.term.NORMAL
-
-    def __unicode__(self):
-        return unicode(self.format) + unicode(self.string) + self.term.NORMAL
+        return str(self.format) + str(self.string) + self.term.NORMAL
 
     def __repr__(self):
         return '%s("%s")' % (self.__class__.__name__, self.string)
@@ -463,7 +474,7 @@ class ColorString(object):
         return (ColorString(self.string[:length], self.format),
                 ColorString(self.string[length:], self.format))
 
-    @multimethod(basestring)
+    @multimethod(str)
     def __radd__(self, other):
         return [other, self]
 
@@ -471,15 +482,18 @@ class ColorString(object):
     def __radd__(self, other):
         return list.__add__(other, [self])
 
+
 class LineBreak(ColorString):
     def __init__(self):
         ColorString.__init__(self, '', '')
+
 
 def split_string(s, length):
     if isinstance(s, ColorString):
         return s.split(length)
     else:
         return s[:length], s[length:]
+
 
 def break_color_string_list(data, cols):
     lines = []
@@ -488,13 +502,14 @@ def break_color_string_list(data, cols):
     for s in data:
         while width + len(s) > cols:
             prefix, s = split_string(s, cols - width)
-            lines.append(current + unicode(prefix))
+            lines.append(current + str(prefix))
             current = ''
             width = 0
-        current += unicode(s)
+        current += str(s)
         width += len(s)
     lines.append(current)
     return lines
+
 
 def split_at_linebreak(data):
     lines = [[]]
@@ -504,6 +519,7 @@ def split_at_linebreak(data):
         else:
             lines[-1].append(e)
     return lines
+
 
 def break_blocks(blocks):
     def break_lines(lines, block):

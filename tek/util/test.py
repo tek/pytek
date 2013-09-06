@@ -33,10 +33,10 @@ def test_cases(pkg_name, include_tests={}, exclude_tests={}):
                 cname = test.__class__.__name__
                 mname = test._testMethodName
                 if not ((include_tests and
-                         (not include_tests.has_key(cname) or
+                         (cname not in include_tests or
                           (include_tests[cname] and
                            not mname in include_tests[cname])))
-                or (exclude_tests.has_key(cname) and
+                or (cname in exclude_tests and
                     (not exclude_tests[cname] or
                      (mname in exclude_tests[cname])))):
                     yield test

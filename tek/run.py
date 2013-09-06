@@ -47,7 +47,7 @@ class SignalManager(object):
         self._handlers.setdefault(signum, []).append(handler)
 
     def remove(self, handler):
-        for sig in self._handlers.itervalues():
+        for sig in self._handlers.values():
             try:
                 sig.remove(handler)
             except ValueError:

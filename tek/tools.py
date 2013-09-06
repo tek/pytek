@@ -1,5 +1,3 @@
-from __future__ import print_function, absolute_import
-
 __copyright__ = """ Copyright (c) 2009-2013 Torsten Schmits
 
 This file is part of pytek. pytek is free software;
@@ -25,20 +23,25 @@ import threading
 import time
 import itertools
 import functools
+import tempfile
 
-from tek.log import stdouthandler, debug, logger
+from tek.log import stdouthandler, logger
 from tek.io.terminal import terminal
+from functools import reduce
+
 
 def zip_fill(default, *seqs):
     # TODO itertools.zip_longest
     filler = lambda *seq: [el if el is not None else default for el in seq]
-    return map(filler, *seqs)
+    return list(map(filler, *seqs))
+
 
 class Silencer(object):
     """ Context manager that suppresses output to stdout. """
+
     def __init__(self, active=True):
         self._active = active
-        self._file = os.tmpfile()
+        self._file = tempfile.TemporaryFile()
 
     def __enter__(self):
         if self._active:
@@ -55,51 +58,60 @@ class Silencer(object):
     def write(self, data):
         pass
 
+
 def repr_params(*params):
     return '(' + ', '.join(map(repr, params)) + ')'
+
 
 def simple_repr(self, *params):
     return '{}{}'.format(self.__class__.__name__, repr_params(*params))
 
-def str_list(l, j=', ', printer=lambda s: s, typ=unicode, do_filter=False):
-    strings = map(printer, l)
+
+def str_list(l, j=', ', printer=lambda s: s, typ=str, do_filter=False):
+    strings = list(map(printer, l))
     if do_filter:
-        strings = itertools.ifilter(None, strings)
+        strings = [_f for _f in strings if _f]
     return j.join(map(typ, strings))
 
+
 def choose(lst, indicator):
-    return [l for l, i in itertools.izip(lst, indicator) if i]
+    return [l for l, i in zip(lst, indicator) if i]
+
 
 def make_list(*args):
     result = []
     for a in args:
         if a is not None:
-            if (not isinstance(a, basestring) and
+            if (not isinstance(a, str) and
                 isinstance(a, collections.Sequence)):
-                result.extend(filter(lambda e: e is not None, a))
+                result.extend([e for e in a if e is not None])
             else:
                 result.append(a)
     return result
 
+
 def camelcaseify(name, sep=''):
     return sep.join([n.capitalize() for n in name.split('_')])
 
-is_seq = lambda x: (not isinstance(x, basestring) and
+is_seq = lambda x: (not isinstance(x, str) and
                     (isinstance(x, collections.Sequence) or
                      hasattr(x, '__iter__')))
-must_repeat = lambda x: (isinstance(x, (basestring, type)) or
+must_repeat = lambda x: (isinstance(x, (str, type)) or
                          hasattr(x, 'ymap_repeat'))
 must_not_repeat = lambda x: (isinstance(x, itertools.repeat) or is_seq(x) or
                              hasattr(x, '__len__'))
 iterify = lambda x: (x if not must_repeat(x) and must_not_repeat(x) else
                      itertools.repeat(x))
 
+
 def yimap(func, *args, **kwargs):
-    return itertools.imap(lambda *a: func(*a, **kwargs),
-                          *itertools.imap(iterify, args))
+    return list(map(lambda *a: func(*a, **kwargs),
+                          *list(map(iterify, args))))
+
 
 def ymap(*args, **kwargs):
     return list(yimap(*args, **kwargs))
+
 
 def recursive_printer(name, arg):
     if hasattr(arg, name):
@@ -108,24 +120,28 @@ def recursive_printer(name, arg):
         return '[' + str_list(arg, printer=lambda a: 
                               recursive_printer(name, a)) + ']'
     else:
-        return unicode(arg)
+        return str(arg)
 
 pretty = lambda a: recursive_printer('pretty', a)
 short = lambda a: recursive_printer('short', a)
 formatted = lambda a: recursive_printer('formatted', a)
 
+
 def filter_index(l, index):
     return [l[i] for i in index]
+
 
 def join_lists(l):
     from operator import add
     return reduce(add, l, [])
+
 
 def cumsum(seq):
     sum = 0
     for element in seq:
         sum += seq
         yield sum
+
 
 def ijoin_lists(l):
     """ Convert the list of lists l to its elements' sums. """
@@ -134,65 +150,80 @@ def ijoin_lists(l):
             if not all(ymap(isinstance, l, list)):
                 from tek.errors import MooException
                 raise MooException('Some elements aren\'t lists!')
-            for i in cumsum([0] + map(len, l[:-1])):
+            for i in cumsum([0] + list(map(len, l[:-1]))):
                 l[i:i+1] = l[i]
         except Exception as e:
             logger.debug('ijoin_lists failed with: ' + str(e))
     return l
+
 
 def pairs(list1, list2):
     for e1 in list1:
         for e2 in list2:
             yield e1, e2
 
+
 def indices_of(pred, seq):
     return (i for i, e in enumerate(seq) if pred(e))
+
 
 def index_of(pred, seq):
     return next(indices_of(pred, seq), None)
 
+
 def find(pred, seq, default=None):
-    return next(itertools.ifilter(pred, seq), default)
+    return next(list(filter(pred, seq)), default)
+
 
 def find_iter(pred, it):
-    return next(itertools.ifilter(pred, it), None)
+    return next(list(filter(pred, it)), None)
+
 
 def listdir_abs(dirname):
     return [os.path.join(dirname, f) for f in os.listdir(dirname)]
 
+
 def decode(string):
     try:
-        return unicode(string)
+        return str(string)
     except UnicodeDecodeError:
-        return unicode(string, encoding='utf-8')
+        return str(string, encoding='utf-8')
 
 enc = sys.getfilesystemencoding()
 
+
 def unicode_filename(string):
-    if not isinstance(string, unicode):
-        string = unicode(string, encoding=enc)
+    if not isinstance(string, str):
+        string = str(string, encoding=enc)
     return string
 
+
 def extremum_len(fun, *seqs):
-    return fun(map(len, seqs))
+    return fun(list(map(len, seqs)))
+
 
 def minlen(*seqs):
     return extremum_len(min, *seqs)
 
+
 def maxlen(*seqs):
     return extremum_len(max, *seqs)
 
+
 def filterfalse_keys(pred, mydict):
-    newkeys = itertools.ifilterfalse(pred, mydict)
+    newkeys = itertools.filterfalse(pred, mydict)
     return dict([[k, mydict[k]] for k in newkeys])
+
 
 def list_diff(l1, l2):
     return list(set(l1) - set(l2))
+
 
 def list_uniq_ordered(seq):
     seen = set()
     seen_add = seen.add
     return [x for x in seq if x not in seen and not seen_add(x)]
+
 
 class ProgressPrinter(threading.Thread):
     def __init__(self, source, dest):
@@ -233,6 +264,7 @@ class ProgressPrinter(threading.Thread):
         self._print_progress()
         self.stop()
 
+
 def copy_progress(source, dest):
     import shutil, signal
     old_handler = signal.getsignal(signal.SIGINT)
@@ -242,8 +274,9 @@ def copy_progress(source, dest):
     def interrupt(signum, frame):
         progress.stop()
         signal(signal.SIGINT, old_handler)
+        msg = 'Interrupted by signal {}.'.format(signum)
         print()
-        print("Interrupted by signal %d." % signum)
+        print(msg)
     signal.signal(signal.SIGINT, interrupt)
     terminal.lock()
     terminal.push_lock()
@@ -251,6 +284,7 @@ def copy_progress(source, dest):
     shutil.copy(source, dest)
     progress.finish()
     terminal.pop_lock()
+
 
 def sizeof_fmt(num, prec=1, bi=True):
     div = 1024. if bi else 1000.
@@ -261,9 +295,11 @@ def sizeof_fmt(num, prec=1, bi=True):
         num /= div
     return fmt.format(num, x)
 
+
 def free_space_in_dir(dir):
     f = os.statvfs(dir)
     return f.f_bfree * f.f_bsize
+
 
 def resolve_redirect(url):
     try:
@@ -273,8 +309,10 @@ def resolve_redirect(url):
     else:
         return requests.get(url, stream=True).url
 
+
 def lists_uniq(lists):
     return list(set(sum(lists, [])))
+
 
 class _WrapThread(threading.Thread):
 
@@ -286,9 +324,10 @@ class _WrapThread(threading.Thread):
     def run(self):
         self.result = self._function()
 
+
 def parallel_map(func, *a):
-    partials = [functools.partial(func, *args) for args in itertools.izip(*a)]
-    threads = map(_WrapThread, partials)
+    partials = [functools.partial(func, *args) for args in zip(*a)]
+    threads = list(map(_WrapThread, partials))
     for thread in threads:
         thread.start()
     for thread in threads:

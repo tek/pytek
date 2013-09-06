@@ -1,5 +1,3 @@
-from __future__ import print_function
-
 __copyright__ = """ Copyright (c) 2009-2013 Torsten Schmits
 
 This file is part of pytek. pytek is free software;
@@ -59,25 +57,26 @@ class CommandLine(object):
 
     @multimethod(list)
     def print_(self, msg):
-        map(self.print_, msg)
+        list(map(self.print_, msg))
 
     @multimethod(object)
     def print_(self, msg):
-        map(self.print_line, unicode(msg).splitlines())
+        list(map(self.print_line, str(msg).splitlines()))
 
     def print_line(self, line):
-        if isinstance(line, unicode):
+        if isinstance(line, str):
             line = line.encode('utf-8')
         if self.prompt:
-            print(self.prompt, line)
+            print('{} {}'.format(self.prompt, line))
         else:
             print(line)
 
     def reconstruct_prompt(self):
-        prompter = lambda (l, p), s: self.color(l) + unicode(p) + s + \
-                   self.term.NORMAL
-        self.prompt = str_list(map(prompter, enumerate(self.prefixes),
-                                   self.suffixes), ' ')
+        def prompter(lp, s):
+            l, p = lp
+            return self.color(l) + str(p) + s + self.term.NORMAL
+        self.prompt = str_list(list(map(prompter, enumerate(self.prefixes),
+                                        self.suffixes)), ' ')
 
 command_line = CommandLine()
 

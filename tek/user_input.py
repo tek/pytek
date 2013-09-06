@@ -47,7 +47,7 @@ class InputQueue(list):
 input_queue = InputQueue()
 
 def is_digit(arg):
-    return isinstance(arg, int) or (isinstance(arg, basestring) and
+    return isinstance(arg, int) or (isinstance(arg, str) and
                                     arg.isdigit())
     
 class UserInput(object):
@@ -127,7 +127,7 @@ class UserInput(object):
 
     def _validate(self):
         return not (self._do_validate and self._validator and not
-                    self._validator.match(unicode(self._input)))
+                    self._validator.match(str(self._input)))
 
     @property
     def prompt(self):
@@ -140,8 +140,8 @@ class UserInput(object):
 class SimpleChoice(UserInput):
     def __init__(self, elements, text=[''], additional=[], *a, **kw):
         self.text = text
-        self._elements = map(unicode, elements)
-        self._additional = map(unicode, additional)
+        self._elements = list(map(str, elements))
+        self._additional = list(map(str, additional))
         UserInput.__init__(self, [], *a, **kw)
 
     def _setup_validator(self):
@@ -162,15 +162,15 @@ class SimpleChoice(UserInput):
 
     @property
     def input_hint_string(self):
-        v = filter(None, self.input_hint)
+        v = [_f for _f in self.input_hint if _f]
         return ' [%s]' % '/'.join(v) if v else ''
 
     @property
     def input_hint(self):
-        return filter(lambda e: not e.isdigit(), self._elements)
+        return [e for e in self._elements if not e.isdigit()]
 
     def add_element(self, e):
-        self._elements.append(unicode(e))
+        self._elements.append(str(e))
         self._setup_validator()
 
 class SingleCharSimpleChoice(SimpleChoice):
@@ -183,7 +183,7 @@ class SingleCharSimpleChoice(SimpleChoice):
         if enter:
             additional += ['']
         self._enter = enter
-        single = (all(len(unicode(e)) <= 1 for e in elements + additional) and
+        single = (all(len(str(e)) <= 1 for e in elements + additional) and
                   validate)
         SimpleChoice.__init__(self, elements, additional=additional,
                               single=single, validate=validate, *args, **kwargs)
@@ -200,7 +200,7 @@ class YesNo(SingleCharSimpleChoice):
     def value(self):
         return self._input == 'y'
 
-    def __nonzero__(self):
+    def __bool__(self):
         return bool(self.value)
 
 class SpecifiedChoice(SingleCharSimpleChoice):
@@ -221,7 +221,7 @@ class SpecifiedChoice(SingleCharSimpleChoice):
         self._text_pre = text_pre or []
         self._text_post = text_post or []
         self._info = info or [[]] * len(elements)
-        self._numbers = range(1, len(elements) + 1)
+        self._numbers = list(range(1, len(elements) + 1))
         SingleCharSimpleChoice.__init__(self, elements=self._numbers,
                                         text=[], additional=self._simple,
                                         *args, **kwargs)
@@ -233,7 +233,7 @@ class SpecifiedChoice(SingleCharSimpleChoice):
     @property
     def prompt(self):
         text = copy.copy(self._text_pre)
-        for c in itertools.izip(self._numbers, self._choices, self._info):
+        for c in zip(self._numbers, self._choices, self._info):
             text.append(self._format_choice(*c))
         return text + self._text_post
 
@@ -297,7 +297,7 @@ class LoopingInput(object):
             value = super(LoopingInput, self).read()
             if value == self._terminate:
                     break
-            elif self._dispatch.has_key(value):
+            elif value in self._dispatch:
                 self._dispatch[value]()
             self.process()
             if self._force_terminate:
@@ -319,7 +319,7 @@ class LoopingInput(object):
 
 class CheckboxList(LoopingInput, SpecifiedChoice):
     def __init__(self, elements, initial=None, colors=None, **kw):
-        self._lines = map(unicode, elements)
+        self._lines = list(map(str, elements))
         LoopingInput.__init__(self, **kw)
         SpecifiedChoice.__init__(self, self._lines, simple=['q'], newline=False,
                                  enter='q', **kw)
@@ -331,7 +331,7 @@ class CheckboxList(LoopingInput, SpecifiedChoice):
     def prompt(self):
         text_post = copy.copy(self._text_post)
         text_post[-1] += self.input_hint_string
-        col = lambda c: ColorString(' {} '.format(unicode(c+1)),
+        col = lambda c: ColorString(' {} '.format(str(c+1)),
                                     self._colors[self._states[c]])
         return (self._text_pre + [[' ', col(i), ' ', el] for i, el in
                                   enumerate(self._lines)] + text_post)
@@ -347,5 +347,5 @@ class CheckboxList(LoopingInput, SpecifiedChoice):
         return self._states
 
 def confirm(message, remove_text=False):
-    message = [unicode(message)] + ['Press return to continue.']
+    message = [str(message)] + ['Press return to continue.']
     SingleCharSimpleChoice([''], text=message, remove_text=remove_text).read()
