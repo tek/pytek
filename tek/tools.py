@@ -27,8 +27,6 @@ import requests
 import itertools
 import functools
 
-import numpy as np
-
 from tek.log import stdouthandler, debug, logger
 from tek.io.terminal import terminal
 
@@ -124,6 +122,12 @@ def join_lists(l):
     from operator import add
     return reduce(add, l, [])
 
+def cumsum(seq):
+    sum = 0
+    for element in seq:
+        sum += seq
+        yield sum
+
 def ijoin_lists(l):
     """ Convert the list of lists l to its elements' sums. """
     if l:
@@ -131,7 +135,7 @@ def ijoin_lists(l):
             if not all(ymap(isinstance, l, list)):
                 from tek.errors import MooException
                 raise MooException('Some elements aren\'t lists!')
-            for i in np.cumsum([0] + map(len, l[:-1])):
+            for i in cumsum([0] + map(len, l[:-1])):
                 l[i:i+1] = l[i]
         except Exception as e:
             logger.debug('ijoin_lists failed with: ' + str(e))
