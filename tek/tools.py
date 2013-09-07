@@ -172,7 +172,7 @@ def index_of(pred, seq):
 
 
 def find(pred, seq, default=None):
-    return next(list(filter(pred, seq)), default)
+    return next(filter(pred, seq), default)
 
 
 def find_iter(pred, it):
