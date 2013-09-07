@@ -348,10 +348,6 @@ class Terminal(object):
     def write(self, string):
         self.terminal_controller.write(string)
 
-    @multimethod()
-    def write_lines(self, data='', **kw):
-        pass
-
     @multimethod(unicode)
     def write_lines(self, data=unicode(''), **kw):
         self.write_lines(data.encode('utf-8'), **kw)
