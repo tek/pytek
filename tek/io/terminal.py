@@ -181,8 +181,13 @@ class TerminalController(object):
         s = match.group()
         return getattr(self, s[2:-1]) if s == '$$' else s
 
+    @multimethod(str)
     def write(self, stuff):
         sys.stdout.write(stuff)
+
+    @multimethod(bytes)
+    def write(self, stuff):
+        sys.stdout.buffer.write(stuff)
 
     def flush(self):
         sys.stdout.flush()
@@ -354,19 +359,10 @@ class Terminal(object):
             if not Terminal._locks:
                 self.unlock()
 
-    @multimethod(str)
-    def write(self, string):
-        self.write(string.encode('utf8'))
-
-    @multimethod(bytes)
     def write(self, string):
         self.terminal_controller.write(string)
 
     @multimethod(str)
-    def write_lines(self, data=str(''), **kw):
-        self.write_lines(data.encode('utf-8'), **kw)
-
-    @multimethod(bytes)
     def write_lines(self, data='', **kw):
         lines = data.splitlines() if data else ['']
         if len(lines) == 1:
