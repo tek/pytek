@@ -143,30 +143,31 @@ class TerminalController(object):
         if set_fg:
             for i, color in enumerate(self._COLORS):
                 setattr(self, color,
-                        curses.tparm(bytes(set_fg, 'utf8'), i) or '')
+                        curses.tparm(set_fg, i) or '')
         set_fg_ansi = self._tigetstr('setaf')
         if set_fg_ansi:
             for i, color in enumerate(self._ANSICOLORS):
                 setattr(self, color,
-                        curses.tparm(bytes(set_fg_ansi, 'utf8'), i) or '')
+                        curses.tparm(set_fg_ansi, i) or '')
         set_bg = self._tigetstr('setb')
         if set_bg:
             for i, color in enumerate(self._COLORS):
                 setattr(self, 'BG_'+color,
-                        curses.tparm(bytes(set_bg, 'utf8'), i) or '')
+                        curses.tparm(set_bg, i) or '')
         set_bg_ansi = self._tigetstr('setab')
         if set_bg_ansi:
             for i, color in enumerate(self._ANSICOLORS):
                 setattr(self, 'BG_'+color,
-                        curses.tparm(bytes(set_bg_ansi, 'utf8'), i) or '')
+                        curses.tparm(set_bg_ansi, i) or '')
 
     def _tigetstr(self, cap_name):
         # String capabilities can include "delays" of the form "$<2>".
         # For any modern terminal, we should be able to just ignore
         # these, so strip them out.
         import curses
-        cap = curses.tigetstr(cap_name) or ''
-        return re.sub(r'\$<\d+>[/*]?', '', str(cap))
+        cap = curses.tigetstr(cap_name) or b''
+        clean = re.sub(r'\$<\d+>[/*]?', '', str(cap, 'ascii'))
+        return bytes(clean, 'ascii')
 
     def render(self, template):
         """
