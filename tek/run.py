@@ -14,21 +14,26 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, see <http://www.gnu.org/licenses/>.
 """
 
-import signal, sys, threading
+import signal
+import sys
+import threading
 
 from tek import dodebug, logger
 from tek.errors import MooException
 from tek.tools import str_list
 
-class SignalManager(object):
-    _instance = None
 
-    class __metaclass__(type):
-        @property
-        def instance(cls):
-            if cls._instance is None:
-                cls._instance = SignalManager()
-            return cls._instance
+class Singleton(type):
+
+    @property
+    def instance(cls):
+        if cls._instance is None:
+            cls._instance = SignalManager()
+        return cls._instance
+
+
+class SignalManager(metaclass=Singleton):
+    _instance = None
 
     def __init__(self):
         if SignalManager._instance is not None:
@@ -60,6 +65,7 @@ class SignalManager(object):
         signal.signal(signum, signal.SIG_IGN)
         if signum == signal.SIGINT and self.exit_on_interrupt:
             sys.exit()
+
 
 def moo_run(func, handle_sigint=True, *a, **kw):
     try:

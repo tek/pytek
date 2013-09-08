@@ -176,7 +176,7 @@ def find(pred, seq, default=None):
 
 
 def find_iter(pred, it):
-    return next(list(filter(pred, it)), None)
+    return next(filter(pred, it), None)
 
 
 def listdir_abs(dirname):
