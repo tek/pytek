@@ -459,7 +459,8 @@ class ColorString(object):
         return len(self.string)
 
     def __str__(self):
-        return str(self.format) + str(self.string) + self.term.NORMAL
+        return (str(self.format, 'ascii') + str(self.string) +
+                str(self.term.NORMAL, 'ascii'))
 
     def __repr__(self):
         return '%s("%s")' % (self.__class__.__name__, self.string)
