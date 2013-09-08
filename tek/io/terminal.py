@@ -391,7 +391,7 @@ class Terminal(object):
         else:
             if self.locked:
                 Terminal._lines += 1
-            self.write('\n' + data)
+            self.write('\n{}'.format(data))
 
     def write_color_strings(self, data):
         total_len = sum(map(len, data))
