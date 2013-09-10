@@ -17,12 +17,8 @@ Place, Suite 330, Boston, MA  02111-1307  USA
 
 import re
 import os
-import sys
 
-if sys.version_info < (3, 0):
-    import ConfigParser as configparser
-else:
-    import configparser
+import configparser
 
 from tek.config.errors import *
 from tek.config.options import *
@@ -245,6 +241,7 @@ class ConfigurationFactory(object):
     """ Construct Configuration objects out of a section of the given
     config files.
     """
+
     def __init__(self, allow_files=True):
         self.files = []
         self.config_parser = configparser.SafeConfigParser()
