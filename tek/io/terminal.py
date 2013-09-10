@@ -449,6 +449,7 @@ class Terminal(object):
 
 class ColorString(object):
     """ String with formatting, preserving length. """
+
     term = TerminalController()
 
     def __init__(self, strng, format):
@@ -459,8 +460,9 @@ class ColorString(object):
         return len(self.string)
 
     def __str__(self):
-        return (str(self.format, 'ascii') + str(self.string) +
-                str(self.term.NORMAL, 'ascii'))
+        _decode = lambda s: s if isinstance(s, str) else str(s, 'ascii')
+        return (_decode(self.format) + str(self.string) +
+                _decode(self.term.NORMAL))
 
     def __repr__(self):
         return '%s("%s")' % (self.__class__.__name__, self.string)
