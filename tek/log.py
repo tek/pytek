@@ -14,9 +14,11 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, see <http://www.gnu.org/licenses/>.
 """
 
-import logging, os, sys
+import logging
+import os
+import sys
 
-from .util.debug import dodebug
+from tek.util.debug import dodebug
 
 logger = logging.getLogger('tek')
 logger.setLevel(logging.INFO)
@@ -25,7 +27,8 @@ stdouthandler.setLevel(logging.INFO)
 logger.addHandler(stdouthandler)
 if dodebug:
     logger.setLevel(logging.DEBUG)
-if 'TEK_PYTHON_FILE_LOGGING' in os.environ.keys():
+    stdouthandler.setLevel(logging.DEBUG)
+if 'TEK_PYTHON_FILE_LOGGING' in os.environ:
     try:
         handler = logging.FileHandler(os.path.expanduser('~/.python/log'))
         logger.addHandler(handler)
