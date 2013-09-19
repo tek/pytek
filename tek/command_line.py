@@ -18,7 +18,7 @@ Place, Suite 330, Boston, MA  02111-1307  USA
 from tek.io.terminal import TerminalController
 from tek.tools import str_list, pretty, short
 
-from multimethods import multimethod
+from crystalmethod import multimethod
 
 class CommandLine(object):
     term = TerminalController()

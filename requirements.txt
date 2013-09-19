@@ -1,1 +1,1 @@
-git+http://gitlab.gluon.ssh22.net/python/multimethods.git
+crystalmethod

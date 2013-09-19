@@ -21,7 +21,7 @@ import os
 import re
 from time import sleep
 
-from multimethods import multimethod
+from crystalmethod import multimethod
 
 from tek.log import logger
 from functools import reduce

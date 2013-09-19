@@ -19,11 +19,11 @@ import glob
 from setuptools import setup, find_packages
 
 setup(name='tek',
-      version='1.0.1',
+      version='1.1.0',
       author='Torsten Schmits',
       author_email='torstenschmits@gmail.com',
       license='GPLv3',
       long_description='helper lib',
       packages=find_packages(exclude=['test', 'scripts']),
       scripts=glob.glob('scripts/*'),
-      install_requires=['multimethods'])
+      install_requires=['crystalmethod'])
