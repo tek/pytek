@@ -200,14 +200,15 @@ class Terminal(object):
 
         def _handle_input(self):
             char = self._char
-            num = ord(char)
-            logger.debug('first ordinal: %d' % num)
-            if num == 27:
-                self._input_movement()
-            elif num == 127:
-                self._backspace()
-            else:
-                self._input_content(char)
+            if char:
+                num = ord(char)
+                logger.debug('first ordinal: %d' % num)
+                if num == 27:
+                    self._input_movement()
+                elif num == 127:
+                    self._backspace()
+                else:
+                    self._input_content(char)
 
         def _input_movement(self):
             char2, char3 = ord(self._char), ord(self._char)
