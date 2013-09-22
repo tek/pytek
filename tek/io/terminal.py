@@ -28,71 +28,26 @@ from functools import reduce
 
 
 class TerminalController(object):
-    """
-    A class that can be used to portably generate formatted output to
-    a terminal.
 
-    `TerminalController` defines a set of instance variables whose
-    values are initialized to the control sequence necessary to
-    perform a given action.  These can be simply included in normal
-    output to the terminal:
-
-        >>> term = TerminalController()
-        >>> print 'This is '+term.GREEN+'green'+term.NORMAL
-
-    Alternatively, the `render()` method can used, which replaces
-    '${action}' with the string required to perform 'action':
-
-        >>> term = TerminalController()
-        >>> print term.render('This is ${GREEN}green${NORMAL}')
-
-    If the terminal doesn't support a given action, then the value of
-    the corresponding instance variable will be set to ''.  As a
-    result, the above code will still work on terminals that do not
-    support color, except that their output will not be colored.
-    Also, this means that you can test whether the terminal supports a
-    given action by simply testing the truth value of the
-    corresponding instance variable:
-
-        >>> term = TerminalController()
-        >>> if term.CLEAR_SCREEN:
-        ...     print 'This terminal supports clearning the screen.'
-
-    Finally, if the width and height of the terminal are known, then
-    they will be stored in the `COLS` and `LINES` attributes.
-    """
-    # Cursor movement:
-    BOL = b''             #: Move the cursor to the beginning of the line
-    UP = b''              #: Move the cursor up one line
-    DOWN = b''            #: Move the cursor down one line
-    LEFT = b''            #: Move the cursor left one char
-    RIGHT = b''           #: Move the cursor right one char
-
-    # Deletion:
-    CLEAR_SCREEN = b''    #: Clear the screen and move to home position
-    CLEAR_EOL = b''       #: Clear to the end of the line.
-    CLEAR_BOL = b''       #: Clear to the beginning of the line.
-    CLEAR_EOS = b''       #: Clear to the end of the screen
-
-    # Output modes:
-    BOLD = b''            #: Turn on bold mode
-    BLINK = b''           #: Turn on blink mode
-    DIM = b''             #: Turn on half-bright mode
-    REVERSE = b''         #: Turn on reverse-video mode
-    NORMAL = b''          #: Turn off all modes
-
-    # Cursor display:
-    HIDE_CURSOR = b''     #: Make the cursor invisible
-    SHOW_CURSOR = b''     #: Make the cursor visible
-
-    # Terminal size:
-    COLS = None          #: Width of the terminal (None for unknown)
-    LINES = None         #: Height of the terminal (None for unknown)
-
-    # Foreground colors:
+    BOL = b''
+    UP = b''
+    DOWN = b''
+    LEFT = b''
+    RIGHT = b''
+    CLEAR_SCREEN = b''
+    CLEAR_EOL = b''
+    CLEAR_BOL = b''
+    CLEAR_EOS = b''
+    BOLD = b''
+    BLINK = b''
+    DIM = b''
+    REVERSE = b''
+    NORMAL = b''
+    HIDE_CURSOR = b''
+    SHOW_CURSOR = b''
+    COLS = None
+    LINES = None
     BLACK = BLUE = GREEN = CYAN = RED = MAGENTA = YELLOW = WHITE = ''
-
-    # Background colors:
     BG_BLACK = BG_BLUE = BG_GREEN = BG_CYAN = ''
     BG_RED = BG_MAGENTA = BG_YELLOW = BG_WHITE = ''
 
