@@ -19,7 +19,7 @@ import glob
 from setuptools import setup, find_packages
 
 setup(name='tek',
-      version='1.1.0',
+      version='1.1.1',
       author='Torsten Schmits',
       author_email='torstenschmits@gmail.com',
       license='GPLv3',
