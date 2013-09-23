@@ -100,11 +100,11 @@ class Configuration(object):
         """ Initialize the dicts used to store the config and the list
         of section names that are added for defaults.
         """
-        self.config_defaults  = ConfigDict()
+        self.config_defaults = ConfigDict()
         self.config_from_file = dict()
-        self.config_from_cli  = ConfigDict()
-        self.overridden       = ConfigDict()
-        self.config           = ConfigDict()
+        self.config_from_cli = ConfigDict()
+        self.overridden = ConfigDict()
+        self.config = ConfigDict()
         self.set_defaults(defaults)
 
     def __getitem__(self, key):
@@ -132,7 +132,7 @@ class Configuration(object):
         """ Collect the config options from the defaults, the file
         config sections that have been default-added and the cli
         config in that order and store them in self.config.
-        The defaults and file config sections are iterated in the 
+        The defaults and file config sections are iterated in the
         order of the additions of the defaults.
         To be called after new values are added.
         """
@@ -159,13 +159,13 @@ class Configuration(object):
     def set_cli_config(self, values):
         """ Set the config values read from command line invocation.
             @param values: Obtained from an instance of OptionParser.
-            Its __dict__ contains all of the possible command line 
+            Its __dict__ contains all of the possible command line
             options. If an option hasn't been supplied, it is None, and
             thus not considered here.
             @type values: optparse.Values
         """
-        self.config_from_cli.update([key, value] for key, value in 
-                                    values.__dict__.items() 
+        self.config_from_cli.update([key, value] for key, value in
+                                    values.__dict__.items()
                                     if value is not None and
                                     key in self.config_defaults)
 
@@ -187,10 +187,10 @@ class Configuration(object):
         """
         if not self.has_section(section):
             raise NoSuchSectionError(section)
-        elif section in self.config_from_file and \
-             key in self.config_from_file[section]: 
+        elif (section in self.config_from_file and key in
+              self.config_from_file[section]):
             return self.config_from_file[section][key]
-        elif key not in self.config_defaults[section]: 
+        elif key not in self.config_defaults[section]:
             raise NoSuchOptionError(key)
         else:
             return self.config_defaults[section][key]
@@ -209,7 +209,7 @@ class ConfigClient(object):
         self.__register(name)
 
     def __register(self, name):
-        """ Add self to the list of instances waiting for the 
+        """ Add self to the list of instances waiting for the
         Configuration in the Configurations proxy.
         """
         self.name = name
@@ -229,7 +229,7 @@ class ConfigClient(object):
 
     def connect(self, config):
         """ Reference the Configuration instance as the config to be
-        used by the client. Called from Configurations once the 
+        used by the client. Called from Configurations once the
         Configuration is ready.
         Mark as connected, so that the config isn't switched.
         """
@@ -331,11 +331,11 @@ class Configurations(object):
         """ Connect a client instance to the according Configuration
         instance, buffering the request if neccessary.
         """
-        try: 
+        try:
             client.connect(cls._configs[client.name])
         except KeyError:
             if client.name not in cls._pending_clients:
-                cls._pending_clients[client.name] = [ ]
+                cls._pending_clients[client.name] = []
             cls._pending_clients[client.name].append(client)
 
     @classmethod
@@ -351,7 +351,7 @@ class Configurations(object):
         """
         if name in cls._configs:
             if name in cls._pending_clients:
-                for client in cls._pending_clients[name]: 
+                for client in cls._pending_clients[name]:
                     client.connect(cls._configs[name])
                 del cls._pending_clients[name]
         else:
@@ -365,8 +365,8 @@ class Configurations(object):
             if section in self._configs:
                 self._configs[section].set_defaults(defaults)
             else:
-                logger.debug('Tried to override defaults in nonexistent section'
-                             ' %s' % section)
+                msg = 'Tried to override defaults in nonexistent section "{}"'
+                logger.debug(msg.format(section))
 
     @classmethod
     def override(self, section, **values):
@@ -387,6 +387,7 @@ class Configurations(object):
         from argparse import ArgumentParser
         parser = ArgumentParser()
         seen = []
+
         def positional_not_as_tuple():
             """ backwards compatibility for parameter positional.
             Previously, only one positional argument was possible.
@@ -397,6 +398,7 @@ class Configurations(object):
             positional = (positional,)
         for pos_arg in positional:
             parser.add_argument(pos_arg[0], nargs=pos_arg[1])
+
         def is_not_positional(name, value):
             """ Check if either the config defines this value as
             positional or the caller requested the parameter of that
@@ -405,9 +407,11 @@ class Configurations(object):
             return (not (isinstance(value, ConfigOption) and value.positional)
                     and (positional is None or not find(lambda p: p[0] == name,
                                                         positional)))
+
         def add_option(name, value):
             arg = ['']
             params = {}
+
             def add():
                 parser.add_argument(*arg, **params)
             switchname = name.replace('_', '-')
@@ -540,6 +544,7 @@ def lazy_configurable(set_class_attr=True, **sections):
                     if try_section(section):
                         return getattr(self, attr)
             return c.__orig_getattr__(self, attr)
+
         def noattr(self, attr):
             t = self.__class__.__name__
             error = "type object '{0}' has no attribute '{1}'".format(t, attr)
