@@ -18,5 +18,5 @@ def process_output(args):
     """ runs process 'args' and returns a list containing the
         stdoutput lines without trailing newline characters
     """
-    return [str(line).rstrip('\n') for line in
+    return [line.decode().rstrip('\n') for line in
             process(args).stdout.readlines()]
