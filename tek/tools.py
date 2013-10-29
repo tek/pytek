@@ -82,8 +82,8 @@ def make_list(*args):
     result = []
     for a in args:
         if a is not None:
-            if (not isinstance(a, str) and
-                isinstance(a, collections.Sequence)):
+            if (not isinstance(a, str) and isinstance(a,
+                                                      collections.Sequence)):
                 result.extend([e for e in a if e is not None])
             else:
                 result.append(a)
@@ -106,7 +106,7 @@ iterify = lambda x: (x if not must_repeat(x) and must_not_repeat(x) else
 
 def yimap(func, *args, **kwargs):
     return list(map(lambda *a: func(*a, **kwargs),
-                          *list(map(iterify, args))))
+                    *list(map(iterify, args))))
 
 
 def ymap(*args, **kwargs):
@@ -117,7 +117,7 @@ def recursive_printer(name, arg):
     if hasattr(arg, name):
         return getattr(arg, name)
     elif is_seq(arg):
-        return '[' + str_list(arg, printer=lambda a: 
+        return '[' + str_list(arg, printer=lambda a:
                               recursive_printer(name, a)) + ']'
     else:
         return str(arg)
@@ -266,17 +266,20 @@ class ProgressPrinter(threading.Thread):
 
 
 def copy_progress(source, dest):
-    import shutil, signal
+    import shutil
+    import signal
     old_handler = signal.getsignal(signal.SIGINT)
     dest_file = (os.path.join(dest, os.path.basename(source)) if
                  os.path.isdir(dest) else dest)
     progress = ProgressPrinter(source, dest_file)
+
     def interrupt(signum, frame):
         progress.stop()
         signal(signal.SIGINT, old_handler)
         msg = 'Interrupted by signal {}.'.format(signum)
         print()
         print(msg)
+
     signal.signal(signal.SIGINT, interrupt)
     terminal.lock()
     terminal.push_lock()
@@ -289,7 +292,7 @@ def copy_progress(source, dest):
 def sizeof_fmt(num, prec=1, bi=True):
     div = 1024. if bi else 1000.
     fmt = '{{:3.{}f}} {{}}'.format(prec)
-    for x in ['B','KB','MB','GB','TB']:
+    for x in ['B', 'KB', 'MB', 'GB', 'TB']:
         if num < div:
             break
         num /= div
