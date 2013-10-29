@@ -381,3 +381,8 @@ def memoized_class(func):
 def touch(_path):
     open(_path, 'a').close()
     return _path
+
+
+def first_valid(seq):
+    if isinstance(seq, collections.Iterable):
+        return next((element for element in seq if element), None)
