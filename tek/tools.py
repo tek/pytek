@@ -24,6 +24,8 @@ import time
 import itertools
 import functools
 import tempfile
+import datetime
+import calendar
 from functools import reduce, wraps
 
 from tek.log import stdouthandler, logger
@@ -389,3 +391,11 @@ def touch(_path):
 def first_valid(seq):
     if isinstance(seq, collections.Iterable):
         return next((element for element in seq if element), None)
+
+
+def unix_to_datetime(stamp):
+    return datetime.datetime.fromtimestamp(stamp)
+
+
+def datetime_to_unix(_date):
+    return calendar.timegm(_date.timetuple())
