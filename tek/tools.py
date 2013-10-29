@@ -376,3 +376,8 @@ def memoized_class(func):
         spec_lock.release()
         return _memoized[key]
     return wrapper
+
+
+def touch(_path):
+    open(_path, 'a').close()
+    return _path
