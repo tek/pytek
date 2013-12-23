@@ -201,7 +201,7 @@ def unicode_filename(string):
 
 
 def extremum_len(fun, *seqs):
-    return fun(list(map(len, seqs)))
+    return len(fun(seqs, key=len))
 
 
 def minlen(*seqs):
