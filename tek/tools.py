@@ -394,8 +394,8 @@ def first_valid(seq):
 
 
 def unix_to_datetime(stamp):
-    return datetime.datetime.fromtimestamp(stamp)
+    return datetime.datetime.utcfromtimestamp(stamp)
 
 
 def datetime_to_unix(_date):
-    return calendar.timegm(_date.timetuple())
+    return calendar.timegm(_date.utctimetuple())
