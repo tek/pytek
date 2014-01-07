@@ -41,7 +41,7 @@ def temp_dir(*components):
 
 
 def fixture_path(*components):
-    return temp_file('_fixtures', *components)
+    return os.path.join(__base_dir__, '_fixtures', *components)
 
 
 def load_fixture(*components):
