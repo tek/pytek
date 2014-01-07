@@ -2,7 +2,6 @@ import os
 import shutil
 
 import spec
-import sure
 
 from tek import Configurations
 from tek.tools import touch
@@ -58,4 +57,4 @@ class Spec(spec.Spec):
 
 
 __all__ = ['create_temp_file', 'temp_file', 'temp_path', 'temp_dir',
-           'fixture_path', 'load_fixture', 'Spec', 'sure']
+           'fixture_path', 'load_fixture', 'Spec']
