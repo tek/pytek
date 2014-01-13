@@ -1,4 +1,4 @@
-__copyright__ = """ Copyright (c) 2009-2013 Torsten Schmits
+__copyright__ = """ Copyright (c) 2009-2014 Torsten Schmits
 
 This file is part of tek-utils. tek-utils is free software;
 you can redistribute it and/or modify it under the terms of the GNU General
@@ -21,4 +21,7 @@ from .process import process, process_output
 from .errors import MooException
 from .user_input import YesNo
 from .config import Configurations, ConfigClient
-from tek.test import Spec
+try:
+    from tek.test import Spec
+except ImportError:
+    pass
