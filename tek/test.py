@@ -5,10 +5,15 @@ import spec
 
 from tek import Configurations
 from tek.tools import touch
+from tek.errors import Error
 
 Configurations.enable_lazy_class_attr = False
 
 __base_dir__ = None
+
+
+class TestEnvError(Error):
+    pass
 
 
 def setup(_path):
@@ -21,6 +26,12 @@ def setup(_path):
     __base_dir__ = _path
 
 
+def _check():
+    if __base_dir__ is None:
+        msg = 'Test base dir not set! Call tek.test.setup(dir).'
+        raise TestEnvError(msg)
+
+
 def create_temp_file(*components):
     _file = temp_file(*components)
     return touch(_file)
@@ -31,6 +42,7 @@ def temp_file(*components):
 
 
 def temp_path(*components):
+    _check()
     return os.path.join(__base_dir__, '_temp', *components)
 
 
@@ -41,6 +53,7 @@ def temp_dir(*components):
 
 
 def fixture_path(*components):
+    _check()
     return os.path.join(__base_dir__, '_fixtures', *components)
 
 
