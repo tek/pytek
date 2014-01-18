@@ -1,7 +1,9 @@
+class Error(Exception):
+    pass
 
-class MooException(Exception):
+class MooException(Error):
     def __init__(self, msg=''):
-        Exception.__init__(self, str(msg))
+        Error.__init__(self, str(msg))
 
 class NoOverloadError(NotImplementedError):
     def __init__(self, function, obj):
