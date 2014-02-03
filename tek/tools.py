@@ -118,8 +118,9 @@ def filter_index(l, index):
 
 
 def join_lists(l):
-    from operator import add
-    return reduce(add, l, [])
+    return list(itertools.chain.from_iterable(l))
+
+flatten = join_lists
 
 
 def cumsum(seq):
