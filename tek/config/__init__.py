@@ -458,12 +458,14 @@ class Configurations(object):
     @classmethod
     def write_config(self, filename):
         def write_section(f, section, config):
-            f.write('[{0}]\n'.format(section))
+            f.write('[{0:s}]\n'.format(section))
             for key, value in config.config.items():
                 if not (isinstance(value, ConfigOption) and value.positional):
                     if isinstance(value, ConfigOption) and value.help:
-                        f.write('\n# {0}\n'.format(value.help))
-                    f.write('# {0} = {1:s}\n'.format(key, value))
+                        f.write('\n# {0:s}\n'.format(value.help))
+                    if value is None:
+                        value = ''
+                    f.write('# {0:s} = {1:s}\n'.format(key, str(value)))
             f.write('\n')
         with open(filename, 'w') as f:
             if 'global' in self._configs:
