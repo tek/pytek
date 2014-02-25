@@ -1,14 +1,14 @@
-
 import re
 import os
 
 import configparser
 
-from tek.config.errors import *
-from tek.config.options import *
-from tek.config.options import ConfigOption, TypedConfigOption
+from tek.config.options import (ConfigOption, TypedConfigOption,
+                                BoolConfigOption)
 from tek import logger
 from tek.tools import camelcaseify, find
+from tek.config.errors import (NoSuchSectionError, NoSuchOptionError,
+                               ConfigClientNotYetConnectedError)
 
 __all__ = ['ConfigError', 'ConfigClient', 'Configurations', 'configurable',
            'lazy_configurable']
@@ -550,3 +550,15 @@ def standard_config_files(alias):
     fname = '{}.conf'.format(alias)
     return (os.path.join('/etc', fname), os.path.join(etc_dir, fname),
             os.path.join(config_home(), fname),)
+
+
+from tek.config.options import (BoolConfigOption, ListConfigOption,
+                                UnicodeConfigOption, PathConfigOption,
+                                PathListConfigOption, FileSizeConfigOption,
+                                IntConfigOption, FloatConfigOption,
+                                DictConfigOption)
+
+__all__ = ['BoolConfigOption', 'ListConfigOption', 'UnicodeConfigOption',
+           'PathConfigOption', 'PathListConfigOption', 'FileSizeConfigOption',
+           'IntConfigOption', 'FloatConfigOption', 'DictConfigOption',
+           'Configurations', 'ConfigClient', 'lazy_configurable']
