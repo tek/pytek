@@ -559,8 +559,10 @@ from tek.config.options import (BoolConfigOption, ListConfigOption,
                                 PathListConfigOption, FileSizeConfigOption,
                                 IntConfigOption, FloatConfigOption,
                                 DictConfigOption)
+from tek.config.errors import ConfigError
 
 __all__ = ['BoolConfigOption', 'ListConfigOption', 'UnicodeConfigOption',
            'PathConfigOption', 'PathListConfigOption', 'FileSizeConfigOption',
            'IntConfigOption', 'FloatConfigOption', 'DictConfigOption',
-           'Configurations', 'ConfigClient', 'lazy_configurable']
+           'Configurations', 'ConfigClient', 'lazy_configurable',
+           'ConfigError']
