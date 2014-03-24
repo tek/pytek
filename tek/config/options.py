@@ -1,4 +1,3 @@
-
 import os
 import glob
 import re
@@ -6,6 +5,7 @@ import re
 from tek import logger
 from tek.tools import join_lists
 from tek.config.errors import ValueError as CValueError
+
 
 def boolify(value):
     """ Return a string's boolean value if it is a string and "true" or
@@ -16,7 +16,9 @@ def boolify(value):
     except:
         return bool(value)
 
+
 class ConfigOption(object):
+
     def __init__(self, positional=None, short=None, **params):
         self.positional = positional
         self.short = short
@@ -46,6 +48,7 @@ class ConfigOption(object):
     def effective_value(self):
         return self.value
 
+
 class TypedConfigOption(ConfigOption):
     """ This is intended to automagically create objects from a string
     read from a config file, if desired. If a TypedConfigOption is put
@@ -69,17 +72,18 @@ class TypedConfigOption(ConfigOption):
     def set(self, args):
         """ Assign args as the config object's value.
         If args is not of the value_type of the config object, it is
-        passed to value_type.__init__. args may be a tuple of 
+        passed to value_type.__init__. args may be a tuple of
         parameters.
         """
         try:
             if isinstance(args, tuple):
-                if len(args) != 1: 
+                if len(args) != 1:
                     logger.debug('TypedConfigOption: len > 1')
                     self.value = self.value_type(*args)
                     return
-                else: args = args[0] 
-            if isinstance(args, self.value_type): 
+                else:
+                    args = args[0]
+            if isinstance(args, self.value_type):
                 self.value = args
             elif self._factory is not None:
                 self.value = self._factory(args)
@@ -99,7 +103,9 @@ class TypedConfigOption(ConfigOption):
             self.value = other.value
         ConfigOption.set_from_co(self, other)
 
+
 class BoolConfigOption(TypedConfigOption):
+
     """ Specialization of TypedConfigOption for booleans, as they must
     be parsed from strings differently.
     """
@@ -118,7 +124,9 @@ class BoolConfigOption(TypedConfigOption):
         """ Transform arg into a bool value and pass it to super. """
         super(BoolConfigOption, self).set(boolify(arg))
 
+
 class ListConfigOption(TypedConfigOption):
+
     def __init__(self, defaultvalue=None, splitchar=',', element_type=None,
                  **params):
         if defaultvalue is None:
@@ -144,7 +152,9 @@ class ListConfigOption(TypedConfigOption):
     def __str__(self):
         return self._splitchar.join(self.value)
 
+
 class PathListConfigOption(ListConfigOption):
+
     def __init__(self, *a, **kw):
         t = PathConfigOption
         super(PathListConfigOption, self).__init__(*a, element_type=t, **kw)
@@ -158,11 +168,15 @@ class PathListConfigOption(ListConfigOption):
     def effective_value(self):
         return self.value
 
+
 class UnicodeConfigOption(TypedConfigOption):
+
     def __init__(self, default, **params):
         TypedConfigOption.__init__(self, str, default, **params)
 
+
 class PathConfigOption(UnicodeConfigOption):
+
     def __init__(self, path=None, **params):
         super(PathConfigOption, self).__init__(path or '', **params)
 
@@ -170,11 +184,13 @@ class PathConfigOption(UnicodeConfigOption):
         p = os.path
         self.value = p.abspath(p.expandvars(p.expanduser(path)))
 
+
 class NumericalConfigOption(TypedConfigOption):
 
     def __init__(self, defaultvalue=-1, value_type=int, **params):
         super(NumericalConfigOption, self).__init__(value_type, defaultvalue,
                                                     **params)
+
 
 class IntConfigOption(NumericalConfigOption):
 
@@ -182,11 +198,13 @@ class IntConfigOption(NumericalConfigOption):
         super(IntConfigOption, self).__init__(defaultvalue=defaultvalue,
                                               value_type=int, **params)
 
+
 class FloatConfigOption(NumericalConfigOption):
 
     def __init__(self, defaultvalue=-1., **params):
         super(FloatConfigOption, self).__init__(defaultvalue=defaultvalue,
                                                 value_type=float, **params)
+
 
 class FileSizeConfigOption(FloatConfigOption):
     _prefixes = ['', 'k', 'm', 'g', 't', 'p']
@@ -211,6 +229,7 @@ class FileSizeConfigOption(FloatConfigOption):
             value = float(value) * (10 ** exponent)
         super(FileSizeConfigOption, self).set(value)
 
+
 class DictConfigOption(TypedConfigOption):
 
     def __init__(self, defaultvalue=None, key_type=str,
@@ -218,13 +237,17 @@ class DictConfigOption(TypedConfigOption):
         defaultvalue = defaultvalue or dict()
         self.key_type = key_type
         self.dictvalue_type = dictvalue_type
-        super(DictConfigOption, self).__init__(value_type=dict, defaultvalue=defaultvalue)
+        super(DictConfigOption, self).__init__(value_type=dict,
+                                               defaultvalue=defaultvalue)
 
     def set(self, value):
+        sanitize = lambda s: s.replace('\\', '')
         if isinstance(value, str):
-            items = (item.split(':') for item in value.split(','))
-            value = dict(((self.key_type(k), self.dictvalue_type(v)) for k, v
-                          in items))
+            items = (re.split(r'(?<!\\):', item, maxsplit=1) for item in
+                     re.split(r'(?<!\\),', value))
+            value = dict(((self.key_type(sanitize(k)),
+                           self.dictvalue_type(sanitize(v)))
+                          for k, v in items))
         super(DictConfigOption, self).set(value)
 
 __all__ = ['BoolConfigOption', 'ListConfigOption', 'UnicodeConfigOption',

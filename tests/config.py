@@ -1,4 +1,6 @@
-from tek.test import Spec, sure
+import sure  # NOQA
+
+from tek.test import Spec
 
 from tek.config import Configurations, lazy_configurable, ConfigClient
 from tek.config.options import (ListConfigOption, FileSizeConfigOption,
@@ -46,3 +48,10 @@ class Config_(Spec):
         conf = ConfigClient('sec1')
         conf('key1').should.equal({1: MyClass('foo'), 2: MyClass('boo')})
         conf('key1').should_not.equal({1: MyClass('afoo'), 2: MyClass('boo')})
+
+    def dict_escape(self):
+        Configurations.clear()
+        value = DictConfigOption('a\:b:foo\:moo,a\,b:boo\,zoo')
+        Configurations.register_config('test', 'sec1', key1=value)
+        conf = ConfigClient('sec1')
+        conf('key1').should.equal({'a:b': 'foo:moo', 'a,b': 'boo,zoo'})
