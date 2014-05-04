@@ -10,5 +10,10 @@ setup(name='tek',
       license='GPLv3',
       long_description='helper lib',
       packages=find_packages(exclude=['tests', 'scripts']),
-      scripts=glob.glob('scripts/*'),
-      install_requires=['crystalmethod'])
+      install_requires=['crystalmethod'],
+      entry_points={
+          'console_scripts': [
+              'tek_write_config = tek.config.write:cli',
+          ],
+      }
+      )

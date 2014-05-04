@@ -1,7 +1,9 @@
+import sys
+import pkgutil
 
-import sys, pkgutil
 from tek import logger
 from tek.config import Configurations
+
 
 def write_pkg_config(dir, outfile):
     sys.path[:0] = [dir]
@@ -18,3 +20,8 @@ def write_pkg_config(dir, outfile):
         except Exception as e:
             logger.debug(e)
     Configurations.write_config(outfile)
+
+
+def cli():
+    assert(len(sys.argv) == 3)
+    write_pkg_config(*sys.argv[1:])
