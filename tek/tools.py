@@ -10,7 +10,7 @@ import functools
 import tempfile
 import datetime
 import calendar
-from functools import reduce, wraps
+from functools import wraps
 
 from tek.log import stdouthandler, logger
 from tek.io.terminal import terminal
@@ -334,13 +334,13 @@ def memoized(func):
         if not hasattr(self, '__memoized__'):
             self.__memoized__ = dict()
             self.__memoize_locks__ = dict()
-        if not func in self.__memoize_locks__:
+        if func not in self.__memoize_locks__:
             self.__memoize_locks__[func] = threading.Lock()
         init_lock.release()
         self.__memoize_locks__[func].acquire()
         calls = self.__memoized__.setdefault(func, {})
         key = (a, tuple(kw.keys()), tuple(kw.values()))
-        if not key in calls:
+        if key not in calls:
             calls[key] = func(self, *a, **kw)
         self.__memoize_locks__[func].release()
         return calls[key]
@@ -356,12 +356,12 @@ def memoized_class(func):
     def wrapper(self, *a, **kw):
         key = (a, tuple(kw.keys()), tuple(kw.values()))
         lock.acquire()
-        if not key in locks:
+        if key not in locks:
             locks[key] = threading.Lock()
         lock.release()
         spec_lock = locks[key]
         spec_lock.acquire()
-        if not key in _memoized:
+        if key not in _memoized:
             _memoized[key] = func(self, *a, **kw)
         spec_lock.release()
         return _memoized[key]
