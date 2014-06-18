@@ -1,6 +1,5 @@
 import re
 import os
-
 import configparser
 
 from tek.config.options import (ConfigOption, TypedConfigOption,
@@ -537,6 +536,65 @@ def lazy_configurable(set_class_attr=True, **sections):
         c.__conf_getattr__ = c.__getattr__ = conf_getattr
         return c
     return dec
+
+
+def lazy_configurable_deep(set_class_attr=True, **sections):
+    ''' same as lazy_configurable, but attaches itself into the
+    baremetal __getattribute__ function which is unconditionally called
+    for each attribute access, thus creating potentially huge overhead.
+
+    The reason for this method is that the normal lazy decorator
+    shadows any AttributeError occuring inside of @property decorated
+    functions of the decorated class, because the built-in property
+    logic catches AttributeErrors and subsequently calls getattr() with
+    the property name, which navigates into the noattr() routine,
+    throwing an AttributeError for the property.
+
+    The whole concept is buggy and the purpose of this decorator is
+    mainly to debug problems during development that arise from the
+    above mentioned exception shadowing.
+    '''
+    def dec(c):
+        def lookup(c, self, attr, error):
+            def try_section(name):
+                section = sections[name]
+                if key in section:
+                    target = (c if set_class_attr and
+                              Configurations.enable_lazy_class_attr else self)
+                    value = ConfigClient(name)(key)
+                    setattr(target, attr, value)
+                    return value
+            match = conf_attr_re.match(attr)
+            if match:
+                section, key = match.group('section'), match.group('key')
+                sections_to_try = ([section] if section in sections else
+                                   sections)
+                for section in sections_to_try:
+                    value = try_section(section)
+                    if value is not None:
+                        return value
+            raise error
+
+        def conf_getattr(self, attr, *a, **kw):
+            looked = False
+            try:
+                try:
+                    return c.__orig_getattribute__(self, attr, *a, **kw)
+                except AttributeError as e:
+                    looked = True
+                    return lookup(c, self, attr, e)
+            except Exception as e:
+                tb = e.__traceback__.tb_next
+                if looked:
+                    tb = tb.tb_next.tb_next
+                raise e.with_traceback(tb)
+
+        Configurations.add_configurable(c)
+        c.__orig_getattribute__ = c.__getattribute__
+        c.__conf_getattribute__ = c.__getattribute__ = conf_getattr
+        return c
+    return dec
+
 
 def config_home():
     return os.environ.get('XDG_CONFIG_HOME',
