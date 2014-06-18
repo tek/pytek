@@ -1,5 +1,7 @@
+import sure  #NOQA
+
 from tek.tools import sizeof_fmt
-from tek.test import Spec, sure
+from tek.test import Spec
 
 
 class Tools_(Spec):
