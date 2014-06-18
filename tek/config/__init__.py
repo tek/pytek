@@ -10,9 +10,6 @@ from tek.tools import camelcaseify, find
 from tek.config.errors import (NoSuchSectionError, NoSuchOptionError,
                                ConfigClientNotYetConnectedError)
 
-__all__ = ['ConfigError', 'ConfigClient', 'Configurations', 'configurable',
-           'lazy_configurable']
-
 
 class ConfigDict(dict):
     """ Dictionary that respects TypedConfigOptions when getting or
@@ -541,7 +538,6 @@ def lazy_configurable(set_class_attr=True, **sections):
         return c
     return dec
 
-
 def config_home():
     return os.environ.get('XDG_CONFIG_HOME',
                           os.path.expanduser(os.path.join('~', '.config')))
@@ -554,15 +550,15 @@ def standard_config_files(alias):
             os.path.join(config_home(), fname),)
 
 
-from tek.config.options import (BoolConfigOption, ListConfigOption,
-                                UnicodeConfigOption, PathConfigOption,
-                                PathListConfigOption, FileSizeConfigOption,
-                                IntConfigOption, FloatConfigOption,
-                                DictConfigOption)
+from tek.config.options import (ListConfigOption, UnicodeConfigOption,
+                                PathConfigOption, PathListConfigOption,
+                                FileSizeConfigOption, IntConfigOption,
+                                FloatConfigOption, DictConfigOption)
 from tek.config.errors import ConfigError
 
-__all__ = ['BoolConfigOption', 'ListConfigOption', 'UnicodeConfigOption',
-           'PathConfigOption', 'PathListConfigOption', 'FileSizeConfigOption',
-           'IntConfigOption', 'FloatConfigOption', 'DictConfigOption',
-           'Configurations', 'ConfigClient', 'lazy_configurable',
-           'ConfigError']
+
+__all__ = ['ConfigClient', 'Configurations', 'configurable',
+           'lazy_configurable', 'ListConfigOption',
+           'UnicodeConfigOption', 'PathConfigOption', 'PathListConfigOption',
+           'FileSizeConfigOption', 'IntConfigOption', 'FloatConfigOption',
+           'DictConfigOption', 'ConfigError']
