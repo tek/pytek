@@ -1,14 +1,17 @@
-
 import functools
+
 
 def generated_list(func):
     @functools.wraps(func)
-    def wrapper(self, *a, **kw):
-        return list(func(self, *a, **kw))
+    def wrapper(*a, **kw):
+        return list(func(*a, **kw))
     return wrapper
 
-def generated_sum(func, init=0):
-    @functools.wraps(func)
-    def wrapper(self, *a, **kw):
-        return sum(func(self, *a, **kw), init)
-    return wrapper
+
+def generated_sum(init=0):
+    def decorate(func):
+        @functools.wraps(func)
+        def wrapper(*a, **kw):
+            return sum(func(*a, **kw), init)
+        return wrapper
+    return decorate
