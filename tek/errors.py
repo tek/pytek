@@ -1,24 +1,34 @@
 class Error(Exception):
+
+    def __init__(self, msg=''):
+        super(Error, self).__init__(str(msg))
+
+
+class TException(Error):
     pass
 
-class MooException(Error):
-    def __init__(self, msg=''):
-        Error.__init__(self, str(msg))
+
+MooException = TException
+
 
 class NoOverloadError(NotImplementedError):
+
     def __init__(self, function, obj):
         error_msg = '%s cannot handle parameters of type %s!' \
                     % (function, type(obj))
         super(NoOverloadError, self).__init__(error_msg)
 
-class InternalError(MooException):
+
+class InternalError(TException):
     pass
 
-class InvalidInput(MooException):
+
+class InvalidInput(TException):
     def __init__(self, string):
         super(InvalidInput, self).__init__('Invalid input: %s' % string)
 
-class NotEnoughDiskSpace(MooException):
+
+class NotEnoughDiskSpace(TException):
     def __init__(self, dir, wanted, avail):
         from tek.tools import sizeof_fmt
         text = 'Not enough space in directory "{}" ({} needed, {} available)'
