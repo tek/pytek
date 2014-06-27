@@ -34,3 +34,7 @@ class NotEnoughDiskSpace(TException):
         text = 'Not enough space in directory "{}" ({} needed, {} available)'
         text = text.format(dir, sizeof_fmt(wanted), sizeof_fmt(avail))
         super(NotEnoughDiskSpace, self).__init__(text)
+
+
+class ParseError(TException):
+    pass
