@@ -608,6 +608,10 @@ def standard_config_files(alias):
             os.path.join(config_home(), fname),)
 
 
+def reset_config(register_files=True, reset_parent=False):
+    Configurations.register_files('tek', *standard_config_files('tek'))
+    Configurations.register_config('tek', 'general', debug=False)
+
 from tek.config.options import (ListConfigOption, UnicodeConfigOption,
                                 PathConfigOption, PathListConfigOption,
                                 FileSizeConfigOption, IntConfigOption,
@@ -619,4 +623,4 @@ __all__ = ['ConfigClient', 'Configurations', 'configurable',
            'lazy_configurable', 'ListConfigOption',
            'UnicodeConfigOption', 'PathConfigOption', 'PathListConfigOption',
            'FileSizeConfigOption', 'IntConfigOption', 'FloatConfigOption',
-           'DictConfigOption', 'ConfigError']
+           'DictConfigOption', 'ConfigError', 'reset_config']
