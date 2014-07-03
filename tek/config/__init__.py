@@ -1,13 +1,16 @@
 import re
 import os
 import configparser
+import importlib
+import copy
 
 from tek.config.options import (ConfigOption, TypedConfigOption,
                                 BoolConfigOption)
 from tek import logger
 from tek.tools import camelcaseify, find
 from tek.config.errors import (NoSuchSectionError, NoSuchOptionError,
-                               ConfigClientNotYetConnectedError)
+                               ConfigClientNotYetConnectedError,
+                               ConfigLoadError)
 
 
 class ConfigDict(dict):
@@ -247,7 +250,27 @@ class ConfigurationFactory(object):
         return config
 
 
-class Configurations(object):
+class ConfigProxy(object):
+
+    def __init__(self, config):
+        self._config = config
+
+    def __getattr__(self, key):
+        return self[key]
+
+    def __getitem__(self, key):
+        return self._config[key]
+
+
+class ConfigSubscript(type):
+
+    def __getitem__(self, section):
+        if section not in self._configs:
+            raise NoSuchSectionError(section)
+        return ConfigProxy(self._configs[section])
+
+
+class Configurations(object, metaclass=ConfigSubscript):
     """ Program-wide register of Configuration instances.
     Connects the clients to the according Configuration, as soon as it
     has registered.
@@ -269,6 +292,8 @@ class Configurations(object):
     allow_files = True
     allow_override = True
     enable_lazy_class_attr = True
+    default_metadata = dict(parents=[], std_files=True, files=[])
+    metadata = {}
 
     @classmethod
     def create_alias(cls, alias):
@@ -278,7 +303,7 @@ class Configurations(object):
     @classmethod
     def register_files(cls, alias, *files):
         cls.create_alias(alias)
-        files = list(map(os.path.expanduser, files))
+        files = [os.path.abspath(os.path.expanduser(f)) for f in files]
         cls._factories[alias].add_files(files)
 
     @classmethod
@@ -448,6 +473,14 @@ class Configurations(object):
                 cls.__init__ = cls.__conf_init__
 
     @classmethod
+    def clear_configs(self):
+        self.clear()
+
+    @classmethod
+    def clear_metadata(self):
+        self.metadata = {}
+
+    @classmethod
     def add_configurable(self, cls):
         self._configurables.add(cls)
 
@@ -469,6 +502,90 @@ class Configurations(object):
             for section, config in self._configs.items():
                 if not section == 'global':
                     write_section(f, section, config)
+
+    @classmethod
+    def load_config(self, name):
+        if name not in self.metadata:
+            self._load_config(name)
+
+    @classmethod
+    def _load_config(self, name):
+        try:
+            module = importlib.import_module('{}.config'.format(name))
+        except ImportError as e:
+            text = 'Could not import config {}!'
+            raise ConfigLoadError(text.format(name)) from e
+        metadata = copy.deepcopy(self.default_metadata)
+        metadata.update(getattr(module, 'metadata', {}))
+        func = getattr(module, 'reset_config', None)
+        if func is None:
+            text = 'Missing reset_config function for {}!'
+            raise ConfigLoadError(text.format(name))
+        self.metadata[name] = metadata
+        self.metadata[name]['func'] = func
+        self.metadata[name]['name'] = name
+        metadata.setdefault('alias', name.split('.')[0])
+        self.load_dependencies(name)
+
+    @classmethod
+    def load_dependencies(self, name):
+        for dep in self.metadata[name]['parents']:
+            self.load_config(dep)
+
+    @classmethod
+    def setup(self, *names, files=True):
+        # TODO
+        # if not names:
+        # names = [inspect.stack()[0].module]
+        self.clear_metadata()
+        for name in names:
+            self.load_config(name)
+        self.reset(files)
+
+    @classmethod
+    def reset(self, files=True):
+        self.clear_configs()
+        for metadata in self.order_dependencies():
+            self.auto_setup_alias(metadata, files)
+            config = metadata['func']()
+            if config:
+                self.auto_setup_configs(metadata, config)
+
+    @classmethod
+    def auto_setup_alias(self, metadata, add_files):
+        alias = metadata['alias']
+        files = []
+        if add_files:
+            files.extend(metadata['files'])
+            if metadata['std_files']:
+                files.extend(standard_config_files(alias))
+        self.register_files(alias, *files)
+
+    @classmethod
+    def auto_setup_configs(self, metadata, config):
+        for section, defaults in config.items():
+            self.register_config(metadata['alias'], section, **defaults)
+
+    @classmethod
+    def order_dependencies(self):
+        pending = list(self.metadata.keys())
+
+        def resolved(key):
+            parents = self.metadata[key]['parents']
+            return not parents or not any(p in pending for p in parents)
+        while pending:
+            none_found = True
+            for name in pending:
+                if resolved(name):
+                    yield self.metadata[name]
+                    pending.remove(name)
+                    pending = [n for n in pending if n != name]
+                    none_found = False
+            if none_found:
+                text = 'Circular dependencies for keys: {}!'
+                raise ConfigLoadError(text.format(pending))
+
+Config = Configurations
 
 
 def configurable(prefix=False, **sections):

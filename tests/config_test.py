@@ -2,7 +2,8 @@ import sure  # NOQA
 
 from tek.test import Spec
 
-from tek.config import Configurations, lazy_configurable, ConfigClient
+from tek.config import (Configurations, lazy_configurable, ConfigClient,
+                        Config, NoSuchSectionError, NoSuchOptionError)
 from tek.config.options import (ListConfigOption, FileSizeConfigOption,
                                 DictConfigOption)
 
@@ -55,3 +56,13 @@ class Config_(Spec):
         Configurations.register_config('test', 'sec1', key1=value)
         conf = ConfigClient('sec1')
         conf('key1').should.equal({'a:b': 'foo:moo', 'a,b': 'boo,zoo'})
+
+    def autoload(self):
+        Config.setup('tests._fixtures.config.mod1',
+                     'tests._fixtures.config.mod3')
+        Config['sec1'].key1.should.equal('success')
+        Config['sec2'].key1.should.equal('val1')
+        invalid_section = lambda: Config['sec9']
+        invalid_section.when.called_with().should.throw(NoSuchSectionError)
+        invalid_option = lambda: Config['sec1'].inval
+        invalid_option.when.called_with().should.throw(NoSuchOptionError)

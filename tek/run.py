@@ -4,7 +4,7 @@ import threading
 import functools
 
 from tek import dodebug, logger
-from tek.errors import MooException
+from tek.errors import TException
 
 
 class Singleton(type):
@@ -21,7 +21,7 @@ class SignalManager(metaclass=Singleton):
 
     def __init__(self):
         if SignalManager._instance is not None:
-            raise MooException('Tried to instantiate singleton SignalManager!')
+            raise TException('Tried to instantiate singleton SignalManager!')
         self._handlers = dict()
         self.exit_on_interrupt = True
 
@@ -56,7 +56,7 @@ def moo_run(func, handle_sigint=True, *a, **kw):
         if handle_sigint:
             SignalManager.instance.sigint()
         func(*a, **kw)
-    except MooException as e:
+    except TException as e:
         logger.error(e)
     except Exception as e:
         logger.error(e)
