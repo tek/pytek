@@ -6,6 +6,6 @@ setup(name='tek',
       author_email='torstenschmits@gmail.com',
       license='GPLv3',
       long_description='helper lib',
-      packages=find_packages(exclude=['tests', 'scripts']),
+      packages=find_packages(exclude=['tests', 'tests.*']),
       install_requires=['crystalmethod'],
       )
