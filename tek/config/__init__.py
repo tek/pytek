@@ -534,9 +534,6 @@ class Configurations(object, metaclass=ConfigSubscript):
 
     @classmethod
     def setup(self, *names, files=True):
-        # TODO
-        # if not names:
-        # names = [inspect.stack()[0].module]
         self.clear_metadata()
         for name in names:
             self.load_config(name)
