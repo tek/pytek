@@ -14,27 +14,27 @@ from tek.config.errors import (NoSuchSectionError, NoSuchOptionError,
 
 
 class ConfigDict(dict):
-    """ Dictionary that respects TypedConfigOptions when getting or
+    ''' Dictionary that respects TypedConfigOptions when getting or
     setting.
-    """
+    '''
 
     def getitem(self, key):
-        """ special method that is used in Configuration objects.
+        ''' special method that is used in Configuration objects.
         Return the content of the TypedConfigOption wrapper, if it is
         present.
-        """
+        '''
         value = self[key]
         if isinstance(value, TypedConfigOption):
             value = value.effective_value
         return value
 
     def __setitem__(self, key, value):
-        """ TypedConfigOption instances get special treatment:
+        ''' TypedConfigOption instances get special treatment:
             If one would be overwritten, call its set() method instead.
             If the new value also is a TypedConfigOption, pass its value
             to set().
             If the key is new, try to create a TypedConfigOption.
-        """
+        '''
         if key not in self:
             if not (isinstance(value, str) or
                     isinstance(value, TypedConfigOption) or
@@ -57,13 +57,13 @@ class ConfigDict(dict):
                 dict.__setitem__(self, key, value)
 
     def update(self, newdict):
-        """ Convenience overload. """
+        ''' Convenience overload. '''
         for key, value in dict(newdict).items():
             self[key] = value
 
 
 class Configuration(object):
-    """ Container for several dictionaries representing configuration
+    ''' Container for several dictionaries representing configuration
     options from various sources:
     - The defaults, to be set from a Configurations.register_config call
     - The file config, read from all files given in a call to
@@ -77,12 +77,12 @@ class Configuration(object):
     Different section names can be used for groups of options from the
     register_config call, which correspond to the section names from the
     files.
-    """
+    '''
 
     def __init__(self, defaults):
-        """ Initialize the dicts used to store the config and the list
+        ''' Initialize the dicts used to store the config and the list
         of section names that are added for defaults.
-        """
+        '''
         self.config_defaults = ConfigDict()
         self.config_from_file = dict()
         self.config_from_cli = ConfigDict()
@@ -91,7 +91,7 @@ class Configuration(object):
         self.set_defaults(defaults)
 
     def __getitem__(self, key):
-        """ Emulate read-only container behaviour. """
+        ''' Emulate read-only container behaviour. '''
         if key not in self.config:
             raise NoSuchOptionError(key)
         return self.config.getitem(key)
@@ -100,25 +100,25 @@ class Configuration(object):
         return str(self.config)
 
     def has_key(self, key):
-        """ Emulate read-only container behaviour. """
+        ''' Emulate read-only container behaviour. '''
         return key in self.config
 
     @property
     def info(self):
-        """ Return the contents of all sources. """
+        ''' Return the contents of all sources. '''
         s = 'Defaults: %s\nCLI: %s\nFiles: %s' % (str(self.config_defaults),
                                                   str(self.config_from_cli),
                                                   str(self.config_from_file))
         return s
 
     def __rebuild_config(self):
-        """ Collect the config options from the defaults, the file
+        ''' Collect the config options from the defaults, the file
         config sections that have been default-added and the cli
         config in that order and store them in self.config.
         The defaults and file config sections are iterated in the
         order of the additions of the defaults.
         To be called after new values are added.
-        """
+        '''
         self.config = ConfigDict()
         self.config.update(self.config_defaults)
         self.config.update(self.config_from_file)
@@ -133,20 +133,20 @@ class Configuration(object):
 
     @config_update
     def set_defaults(self, new_defaults):
-        """ Add a new unique section with default values to the list of
+        ''' Add a new unique section with default values to the list of
         default options.
-        """
+        '''
         self.config_defaults.update(new_defaults)
 
     @config_update
     def set_cli_config(self, values):
-        """ Set the config values read from command line invocation.
+        ''' Set the config values read from command line invocation.
             @param values: Obtained from an instance of OptionParser.
             Its __dict__ contains all of the possible command line
             options. If an option hasn't been supplied, it is None, and
             thus not considered here.
             @type values: optparse.Values
-        """
+        '''
         self.config_from_cli.update([key, value] for key, value in
                                     values.__dict__.items()
                                     if value is not None and
@@ -154,9 +154,9 @@ class Configuration(object):
 
     @config_update
     def set_file_config(self, file_config):
-        """ Add the values obtained from the files as a ConfigDict
+        ''' Add the values obtained from the files as a ConfigDict
         object and rebuild the main config.
-        """
+        '''
         self.config_from_file = ConfigDict()
         self.config_from_file.update(file_config)
 
@@ -165,9 +165,9 @@ class Configuration(object):
         self.overridden.update(values)
 
     def config_from_section(self, section, key):
-        """ Obtain the value that key has in the specific section,
+        ''' Obtain the value that key has in the specific section,
         in the order file->default.
-        """
+        '''
         if not self.has_section(section):
             raise NoSuchSectionError(section)
         elif (section in self.config_from_file and key in
@@ -179,27 +179,27 @@ class Configuration(object):
             return self.config_defaults[section][key]
 
     def has_section(self, name):
-        """ Return True if a section with name has been added. """
+        ''' Return True if a section with name has been added. '''
         return name in self.sections
 
 
 class ConfigClient(object):
-    """ Standard read-only proxy for a Configuration. """
+    ''' Standard read-only proxy for a Configuration. '''
     def __init__(self, name):
-        """ Connect to the Configuration called name. """
+        ''' Connect to the Configuration called name. '''
         self.connected = False
         self._config = None
         self.__register(name)
 
     def __register(self, name):
-        """ Add self to the list of instances waiting for the
+        ''' Add self to the list of instances waiting for the
         Configuration in the Configurations proxy.
-        """
+        '''
         self.name = name
         Configurations.register_client(self)
 
     def config(self, key):
-        """ Obtain a config option's value. """
+        ''' Obtain a config option's value. '''
         if self._config is None:
             raise ConfigClientNotYetConnectedError(self.name, key)
         return self._config[key]
@@ -211,19 +211,19 @@ class ConfigClient(object):
         logger.info(self._config.info)
 
     def connect(self, config):
-        """ Reference the Configuration instance as the config to be
+        ''' Reference the Configuration instance as the config to be
         used by the client. Called from Configurations once the
         Configuration is ready.
         Mark as connected, so that the config isn't switched.
-        """
+        '''
         if self._config is None:
             self._config = config
 
 
 class ConfigurationFactory(object):
-    """ Construct Configuration objects out of a section of the given
+    ''' Construct Configuration objects out of a section of the given
     config files.
-    """
+    '''
 
     def __init__(self, allow_files=True):
         self.files = []
@@ -271,10 +271,10 @@ class ConfigSubscript(type):
 
 
 class Configurations(object, metaclass=ConfigSubscript):
-    """ Program-wide register of Configuration instances.
+    ''' Program-wide register of Configuration instances.
     Connects the clients to the according Configuration, as soon as it
     has registered.
-    """
+    '''
     # A dict of configuration factories by an alias name
     _factories = {}
     # A dict of Configuration instances by their section name
@@ -308,12 +308,12 @@ class Configurations(object, metaclass=ConfigSubscript):
 
     @classmethod
     def register_config(cls, file_alias, section, **defaults):
-        """ Add a Configuration instance to the configs dict that
+        ''' Add a Configuration instance to the configs dict that
         contains the specified section of the files denoted by the
         specified alias and connect waiting client instances.
         If register_files wasn't called with this alias before, it is
         created now.
-        """
+        '''
         cls.create_alias(file_alias)
         if section not in cls._configs:
             config = cls._factories[file_alias].create(section, defaults)
@@ -333,9 +333,9 @@ class Configurations(object, metaclass=ConfigSubscript):
 
     @classmethod
     def register_client(cls, client):
-        """ Connect a client instance to the according Configuration
+        ''' Connect a client instance to the according Configuration
         instance, buffering the request if neccessary.
-        """
+        '''
         try:
             client.connect(cls._configs[client.name])
         except KeyError:
@@ -350,10 +350,10 @@ class Configurations(object, metaclass=ConfigSubscript):
 
     @classmethod
     def notify_clients(cls, name):
-        """ Connects clients to Configuration 'name' that have been
+        ''' Connects clients to Configuration 'name' that have been
         registered before their target and clear the client dict item.
 
-        """
+        '''
         if name in cls._configs:
             if name in cls._pending_clients:
                 for client in cls._pending_clients[name]:
@@ -384,19 +384,19 @@ class Configurations(object, metaclass=ConfigSubscript):
 
     @classmethod
     def parse_cli(self, positional=()):
-        """ Add positional parameters, then define options and switches
+        ''' Add positional parameters, then define options and switches
         based on the config. Parse command line parameters and set
         optional positionals to None that haven't been specified at cli.
         Write parsed options to config.
-        """
+        '''
         from argparse import ArgumentParser
         parser = ArgumentParser()
         seen = []
 
         def positional_not_as_tuple():
-            """ backwards compatibility for parameter positional.
+            ''' backwards compatibility for parameter positional.
             Previously, only one positional argument was possible.
-            """
+            '''
             return (isinstance(positional, (tuple, list)) and positional and
                     not isinstance(positional[0], (tuple, list)))
         if positional_not_as_tuple():
@@ -405,10 +405,10 @@ class Configurations(object, metaclass=ConfigSubscript):
             parser.add_argument(pos_arg[0], nargs=pos_arg[1])
 
         def is_not_positional(name, value):
-            """ Check if either the config defines this value as
+            ''' Check if either the config defines this value as
             positional or the caller requested the parameter of that
             name as positional
-            """
+            '''
             return (not (isinstance(value, ConfigOption) and value.positional)
                     and (positional is None or not find(lambda p: p[0] == name,
                                                         positional)))
@@ -589,7 +589,7 @@ Config = Configurations
 
 
 def configurable(prefix=False, **sections):
-    """ Class decorator, to be called with keyword arguments each
+    ''' Class decorator, to be called with keyword arguments each
     describing a config section and corresponding keys. The first time
     the class is being instantiated, the config keys and their values
     are being set as attributes to the class, thus ensuring that the cli
@@ -598,7 +598,7 @@ def configurable(prefix=False, **sections):
     The attribute '__conf_init__' is used to save the conf setter.
     This is only neccessary to allow the config to be reread using
     Configurations.clear(), e.g. in test cases.
-    """
+    '''
     def dec(c):
         def set_conf(*a, **kw):
             for section, keys in sections.items():
@@ -620,11 +620,11 @@ conf_attr_re = re.compile(r'_((?P<section>.+)__)?(?P<key>.+)')
 
 
 def lazy_configurable(set_class_attr=True, **sections):
-    """ Same class decorator as configurable, with the difference that
+    ''' Same class decorator as configurable, with the difference that
     config values are not set until first accessed. This is done by
     overriding __getattr__ and setting matching attributes from the
     config.
-    """
+    '''
     def dec(c):
         def conf_getattr(self, attr):
             def try_section(name):
