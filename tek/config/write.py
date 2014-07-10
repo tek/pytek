@@ -2,21 +2,27 @@ import sys
 import pkgutil
 
 from tek import logger
-from tek.config import Configurations
+from tek.config import Config
 
 
-def write_pkg_config(dir, outfile):
-    sys.path[:0] = [dir]
-    Configurations.allow_files = False
-    Configurations.allow_override = False
-    mods = pkgutil.walk_packages([dir], onerror=lambda x: True)
-    configs = (name for l, name, ispkg in mods
-               if not ispkg and name.rsplit('.', 1)[-1] == 'config')
-    for name in configs:
+def config_names(_dir):
+    modules = pkgutil.walk_packages([_dir], onerror=lambda x: True)
+    for _l, name, ispkg in modules:
+        print(name)
+        if not ispkg and '.' in name:
+            pkg, module = name.rsplit('.', 1)
+            if module == 'config':
+                yield pkg
+
+
+def write_pkg_config(_dir, outfile, alias):
+    sys.path[:0] = [_dir]
+    Config.allow_files = False
+    Config.allow_override = False
+    for name in config_names(_dir):
         try:
-            mod = __import__(name)
-            if hasattr(mod, 'reset_config'):
-                mod.reset_config(reset_parent=False)
+            Config.load_config(name)
         except Exception as e:
             logger.debug(e)
-    Configurations.write_config(outfile)
+    Config.reset(files=False, alias=[alias])
+    Config.write_config(outfile)

@@ -540,9 +540,9 @@ class Configurations(object, metaclass=ConfigSubscript):
         self.reset(files)
 
     @classmethod
-    def reset(self, files=True):
+    def reset(self, files=True, alias=None):
         self.clear_configs()
-        for metadata in self.order_dependencies():
+        for metadata in self.order_dependencies(alias):
             self.auto_setup_alias(metadata, files)
             config = metadata['func']()
             if config:
@@ -564,8 +564,9 @@ class Configurations(object, metaclass=ConfigSubscript):
             self.register_config(metadata['alias'], section, **defaults)
 
     @classmethod
-    def order_dependencies(self):
-        pending = list(self.metadata.keys())
+    def order_dependencies(self, alias=None):
+        pending = [name for name, m in self.metadata.items()
+                   if alias is None or m['alias'] in alias]
 
         def resolved(key):
             parents = self.metadata[key]['parents']

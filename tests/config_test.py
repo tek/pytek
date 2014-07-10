@@ -1,11 +1,12 @@
+import sys
 import sure  # NOQA
 
-from tek.test import Spec
-
+from tek.test import Spec, fixture_path, temp_file
 from tek.config import (Configurations, lazy_configurable, ConfigClient,
                         Config, NoSuchSectionError, NoSuchOptionError)
 from tek.config.options import (ListConfigOption, FileSizeConfigOption,
                                 DictConfigOption)
+from tek.config.write import write_pkg_config
 
 
 class Config_(Spec):
@@ -58,11 +59,20 @@ class Config_(Spec):
         conf('key1').should.equal({'a:b': 'foo:moo', 'a,b': 'boo,zoo'})
 
     def autoload(self):
-        Config.setup('tests._fixtures.config.mod1',
-                     'tests._fixtures.config.mod3')
+        sys.path.insert(0, fixture_path('config'))
+        Config.setup('mod1', 'mod3')
         Config['sec1'].key1.should.equal('success')
         Config['sec2'].key1.should.equal('val1')
         invalid_section = lambda: Config['sec9']
         invalid_section.when.called_with().should.throw(NoSuchSectionError)
         invalid_option = lambda: Config['sec1'].inval
         invalid_option.when.called_with().should.throw(NoSuchOptionError)
+
+    def write(self):
+        outfile = temp_file('config', 'outfile.conf')
+        write_pkg_config(fixture_path('config'), outfile, 'mod2')
+        with open(outfile) as _file:
+            lines = _file.readlines()
+            lines.should.equal(['[sec2]\n', '# key1 = val0\n', '\n'])
+
+__all__ = []

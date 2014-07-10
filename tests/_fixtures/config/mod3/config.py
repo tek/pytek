@@ -1,6 +1,5 @@
 metadata = {
-    'parents': ['tek', 'tests._fixtures.config.mod1',
-                'tests._fixtures.config.mod2'],
+    'parents': ['tek', 'mod1', 'mod2'],
 }
 
 
