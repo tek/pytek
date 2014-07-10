@@ -87,7 +87,7 @@ def cli(load_config=True, **conf_kw):
     The parameter 'positional' may specify positional arguments as used
     by Config.parse_cli().
     '''
-    module = inspect.getmodule(inspect.stack()[1][0]).__name__
+    module = inspect.getmodule(inspect.stack()[1][0]).__package__
 
     def dec(func):
         @functools.wraps(func)
