@@ -1,4 +1,3 @@
-
 import termios
 import fcntl
 import sys
@@ -180,7 +179,8 @@ class Terminal(object):
                 try:
                     self._handle_input()
                 except IOError:
-                    sleep(0.01)
+                    pass
+                sleep(0.01)
             return ''.join(self._input)
 
         def _handle_input(self):
