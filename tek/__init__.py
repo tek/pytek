@@ -1,7 +1,7 @@
 from .util.debug import dodebug
 from .log import logger, debug
 from .process import process, process_output
-from .errors import MooException
+from .errors import MooException, TException
 from .user_input import YesNo
 from .config import Configurations, ConfigClient, lazy_configurable, Config
 from tek.run import cli
@@ -13,4 +13,4 @@ except ImportError:
 
 __all__ = ['cli', 'Spec', 'Configurations', 'ConfigClient',
            'lazy_configurable', 'Config', 'YesNo', 'MooException', 'process',
-           'process_output', 'debug', 'logger', 'dodebug']
+           'process_output', 'debug', 'logger', 'dodebug', 'TException']
