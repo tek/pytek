@@ -2,8 +2,9 @@ import signal
 import sys
 import threading
 import functools
+import inspect
 
-from tek import dodebug, logger
+from tek import dodebug, logger, Config
 from tek.errors import TException
 
 
@@ -51,7 +52,7 @@ class SignalManager(metaclass=Singleton):
             sys.exit()
 
 
-def moo_run(func, handle_sigint=True, *a, **kw):
+def main(func, handle_sigint=True, *a, **kw):
     try:
         if handle_sigint:
             SignalManager.instance.sigint()
@@ -63,11 +64,42 @@ def moo_run(func, handle_sigint=True, *a, **kw):
         if dodebug:
             raise
 
+moo_run = main
 
-def cli(func):
-    @functools.wraps(func)
-    def wrapper(*a, **kw):
-        return moo_run(func, *a, **kw)
-    return wrapper
 
-__all__ = ['SignalManager', 'cli']
+def _load_entry_point_config(module, config_alias=None, parse_cli=True,
+                             positional=()):
+    if config_alias is None:
+        config_alias = module
+    Config.setup(config_alias)
+    if parse_cli:
+        Config.parse_cli(positional=positional)
+
+
+def cli(load_config=True, **conf_kw):
+    ''' Convenience decorator for entry point functions.
+    Using this has two effects:
+    The function is wrapped by the main() function that handles SIGINT
+    and exceptions.
+    If 'load_config' is True, the caller's module's config is loaded,
+    and, if parse_cli is True, the command line arguments are parsed.
+    Both parameters are true by default.
+    The parameter 'positional' may specify positional arguments as used
+    by Config.parse_cli().
+    '''
+    module = inspect.getmodule(inspect.stack()[1][0]).__name__
+
+    def dec(func):
+        @functools.wraps(func)
+        def wrapper(*a, **kw):
+            if load_config:
+                _load_entry_point_config(module, **conf_kw)
+            return main(func, *a, **kw)
+        return wrapper
+    if hasattr(load_config, '__call__'):
+        func = load_config
+        load_config = False
+        return dec(func)
+    return dec
+
+__all__ = ['SignalManager', 'cli', 'main']
