@@ -8,7 +8,7 @@ from tek.util.decorator import lazy_property, lazy_class_property
 import tests  # NOQA
 
 
-class LazyPropSpecimen(object):
+class _LazyPropSpecimen(object):
 
     def __init__(self):
         self.indicator = 1
@@ -19,7 +19,7 @@ class LazyPropSpecimen(object):
         return 2
 
 
-class LazyClassPropSpecimen(object):
+class _LazyClassPropSpecimen(object):
     indicator = 1
 
     @lazy_class_property
@@ -27,17 +27,14 @@ class LazyClassPropSpecimen(object):
         self.indicator = 5
         return 2
 
-    def test(self):
-        return setattr(self, 'foo', 66)
-
 
 class Decorator_(Spec, ):
 
     def setup(self, *a, **kw):
         super(Decorator_, self).setup(*a, **kw)
 
-    def lazy_property(self):
-        specimen = LazyPropSpecimen()
+    def set_lazy_property(self):
+        specimen = _LazyPropSpecimen()
         specimen.indicator.should.equal(1)
         specimen.culprit.should.equal(2)
         specimen.indicator.should.equal(5)
@@ -47,8 +44,8 @@ class Decorator_(Spec, ):
         setter.when.called_with().should.throw(AttributeError)
         del specimen.culprit
 
-    def lazy_class_property(self):
-        specimen = LazyClassPropSpecimen()
+    def set_lazy_class_property(self):
+        specimen = _LazyClassPropSpecimen()
         specimen.indicator.should.equal(1)
         specimen.culprit.should.equal(2)
         specimen.indicator.should.equal(5)
