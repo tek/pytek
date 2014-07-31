@@ -19,10 +19,9 @@ def generated_sum(init=0):
 
 class _LazyPropDecorator(object):
 
-    def __init__(self, method):
+    def __init__(self, method, name=None):
         self.create = method
-        self.name = method.__name__
-        self.__doc__ = method.__doc__
+        self.name = name or method.__name__
         functools.update_wrapper(self, method)
 
 
