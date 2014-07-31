@@ -2,8 +2,8 @@ import sys
 import sure  # NOQA
 
 from tek.test import Spec, fixture_path, temp_file
-from tek.config import (Configurations, lazy_configurable, ConfigClient,
-                        Config, NoSuchSectionError, NoSuchOptionError)
+from tek.config import (Config, lazy_configurable, ConfigClient,
+                        NoSuchSectionError, NoSuchOptionError)
 from tek.config.options import (ListConfigOption, FileSizeConfigOption,
                                 DictConfigOption)
 from tek.config.write import write_pkg_config
@@ -12,10 +12,10 @@ from tek.config.write import write_pkg_config
 class Config_(Spec):
 
     def lazy_configurable(self):
-        Configurations.clear()
-        Configurations.register_config('test', 'sec1', key1='val1',
+        Config.clear()
+        Config.register_config('test', 'sec1', key1='val1',
                                        key2=ListConfigOption(['asdf', 'jkl;']))
-        Configurations.register_config('test', 'sec2', key3='val3')
+        Config.register_config('test', 'sec2', key3='val3')
 
         @lazy_configurable(sec1=['key1', 'key2'], sec2=['key3'])
         class Lazy(object):
@@ -28,8 +28,8 @@ class Config_(Spec):
         noattr.should.throw(AttributeError)
 
     def file_size(self):
-        Configurations.clear()
-        Configurations.register_config('test', 'sec1',
+        Config.clear()
+        Config.register_config('test', 'sec1',
                                        key1=FileSizeConfigOption('5.54G'))
         conf = ConfigClient('sec1')
         conf('key1').should.equal(5540000000)
