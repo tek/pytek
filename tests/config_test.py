@@ -2,8 +2,8 @@ import sys
 import sure  # NOQA
 
 from tek.test import Spec, fixture_path, temp_file
-from tek.config import (Config, lazy_configurable, ConfigClient,
-                        NoSuchSectionError, NoSuchOptionError)
+from tek.config import (Config, configurable, ConfigClient, NoSuchSectionError,
+                        NoSuchOptionError)
 from tek.config.options import (ListConfigOption, FileSizeConfigOption,
                                 DictConfigOption)
 from tek.config.write import write_pkg_config
@@ -17,7 +17,7 @@ class Config_(Spec):
                                        key2=ListConfigOption(['asdf', 'jkl;']))
         Config.register_config('test', 'sec2', key3='val3')
 
-        @lazy_configurable(sec1=['key1', 'key2'], sec2=['key3'])
+        @configurable(sec1=['key1', 'key2'], sec2=['key3'])
         class Lazy(object):
             pass
         lazy = Lazy()

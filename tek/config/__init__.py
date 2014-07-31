@@ -11,6 +11,7 @@ from tek.tools import camelcaseify, find
 from tek.config.errors import (NoSuchSectionError, NoSuchOptionError,
                                ConfigClientNotYetConnectedError,
                                ConfigLoadError)
+from tek.util.decorator import lazy_property
 
 
 class ConfigDict(dict):
@@ -291,7 +292,6 @@ class Configurations(object, metaclass=ConfigSubscript):
     # read config from file system
     allow_files = True
     allow_override = True
-    enable_lazy_class_attr = True
     default_metadata = dict(parents=[], std_files=True, files=[])
     metadata = {}
 
@@ -585,130 +585,43 @@ class Configurations(object, metaclass=ConfigSubscript):
 
 Config = Configurations
 
-
-def configurable(prefix=False, **sections):
-    ''' Class decorator, to be called with keyword arguments each
-    describing a config section and corresponding keys. The first time
-    the class is being instantiated, the config keys and their values
-    are being set as attributes to the class, thus ensuring that the cli
-    config may have been processed.  If prefix is True, each key is
-    prefixed with its section name. All attributes get a leading '_'.
-    The attribute '__conf_init__' is used to save the conf setter.
-    This is only neccessary to allow the config to be reread using
-    Configurations.clear(), e.g. in test cases.
-    '''
-    def dec(c):
-        def set_conf(*a, **kw):
-            for section, keys in sections.items():
-                conf = ConfigClient(section)
-                for k in keys:
-                    attrname = '_{0}'.format(k)
-                    if prefix:
-                        attrname = '_{0}{1}'.format(section, attrname)
-                    setattr(c, attrname, conf(k))
-            c.__init__ = c.__orig_init__
-            c.__init__(*a, **kw)
-        Configurations.add_configurable(c)
-        c.__orig_init__ = c.__init__
-        c.__conf_init__ = c.__init__ = set_conf
-        return c
-    return dec
-
 conf_attr_re = re.compile(r'_((?P<section>.+)__)?(?P<key>.+)')
 
 
-def lazy_configurable(set_class_attr=True, **sections):
-    ''' Same class decorator as configurable, with the difference that
-    config values are not set until first accessed. This is done by
-    overriding __getattr__ and setting matching attributes from the
-    config.
+def _add_conf_property(cls, section, key):
+    ''' Binds two lazy properties to cls: _key and _section__key.
+    Upon first access, those properties assign the config value for the
+    corresponding key to __dict__[key].
     '''
-    def dec(c):
-        def conf_getattr(self, attr):
-            def try_section(name):
-                section = sections[name]
-                if key in section:
-                    target = (c if set_class_attr and
-                              Configurations.enable_lazy_class_attr else self)
-                    setattr(target, attr, ConfigClient(name)(key))
-                    return True
-            match = conf_attr_re.match(attr)
-            if match:
-                section, key = match.group('section'), match.group('key')
-                sections_to_try = ([section] if section in sections else
-                                   sections)
-                for section in sections_to_try:
-                    if try_section(section):
-                        return getattr(self, attr)
-            return c.__orig_getattr__(self, attr)
+    getter = lambda self: Config[section][key]
+    simple_name = '_{}'.format(key)
+    complex_name = '_{}__{}'.format(section, key)
+    for name in [simple_name, complex_name]:
+        setattr(cls, name, lazy_property(getter, name=name))
 
-        def noattr(self, attr):
-            t = self.__class__.__name__
-            error = "type object '{0}' has no attribute '{1}'".format(t, attr)
-            raise AttributeError(error)
-        Configurations.add_configurable(c)
-        c.__orig_getattr__ = getattr(c, '__getattr__', noattr)
-        c.__conf_getattr__ = c.__getattr__ = conf_getattr
-        return c
+
+def configurable(**sections):
+    ''' Set lazy properties for all values in each item in 'sections'.
+    It is imperative that the property adding routine is encapsulated in
+    the function _add_conf_property, because the closure 'getter' won't
+    bind to the current value of loop variables 'key' and 'section',
+    resulting in all properties defined in one decoration having the
+    same effective value.
+    '''
+    def dec(cls):
+        Configurations.add_configurable(cls)
+        for section, keys in sections.items():
+            for key in keys:
+                _add_conf_property(cls, section, key)
+        return cls
     return dec
 
 
-def lazy_configurable_deep(set_class_attr=True, **sections):
-    ''' same as lazy_configurable, but attaches itself into the
-    baremetal __getattribute__ function which is unconditionally called
-    for each attribute access, thus creating potentially huge overhead.
-
-    The reason for this method is that the normal lazy decorator
-    shadows any AttributeError occuring inside of @property decorated
-    functions of the decorated class, because the built-in property
-    logic catches AttributeErrors and subsequently calls getattr() with
-    the property name, which navigates into the noattr() routine,
-    throwing an AttributeError for the property.
-
-    The whole concept is buggy and the purpose of this decorator is
-    mainly to debug problems during development that arise from the
-    above mentioned exception shadowing.
-    '''
-    def dec(c):
-        def lookup(c, self, attr, error):
-            def try_section(name):
-                section = sections[name]
-                if key in section:
-                    target = (c if set_class_attr and
-                              Configurations.enable_lazy_class_attr else self)
-                    value = ConfigClient(name)(key)
-                    setattr(target, attr, value)
-                    return value
-            match = conf_attr_re.match(attr)
-            if match:
-                section, key = match.group('section'), match.group('key')
-                sections_to_try = ([section] if section in sections else
-                                   sections)
-                for section in sections_to_try:
-                    value = try_section(section)
-                    if value is not None:
-                        return value
-            raise error
-
-        def conf_getattr(self, attr, *a, **kw):
-            looked = False
-            try:
-                try:
-                    return c.__orig_getattribute__(self, attr, *a, **kw)
-                except AttributeError as e:
-                    looked = True
-                    return lookup(c, self, attr, e)
-            except Exception as e:
-                tb = e.__traceback__.tb_next
-                if looked:
-                    tb = tb.tb_next.tb_next
-                raise e.with_traceback(tb)
-
-        Configurations.add_configurable(c)
-        c.__orig_getattribute__ = c.__getattribute__
-        c.__conf_getattribute__ = c.__getattribute__ = conf_getattr
-        return c
-    return dec
+def lazy_configurable(*a, **kw):
+    import warnings
+    warnings.warn('replaced by configurable()', DeprecationWarning,
+                  stacklevel=2)
+    return configurable(*a, **kw)
 
 
 def config_home():
@@ -723,7 +636,7 @@ def standard_config_files(alias):
             os.path.join(config_home(), fname),)
 
 
-def reset_config(register_files=True, reset_parent=False):
+def reset_config():
     Configurations.register_files('tek', *standard_config_files('tek'))
     Configurations.register_config('tek', 'general', debug=False)
 

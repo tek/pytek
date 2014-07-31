@@ -75,7 +75,6 @@ class Spec(spec.Spec):
             shutil.rmtree(temp_path(), ignore_errors=True)
         warnings.resetwarnings()
         Config.allow_files = allow_files
-        Config.enable_lazy_class_attr = False
         Config.setup(*self._configs, files=allow_files)
         Config.override('general', debug=True)
 
