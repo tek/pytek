@@ -43,22 +43,23 @@ class Config_(Spec):
             def __eq__(self, other):
                 return self._arg == other._arg
 
-        Configurations.clear()
+        Config.clear()
         value = DictConfigOption('1:foo,2:boo', key_type=int,
                                  dictvalue_type=MyClass)
-        Configurations.register_config('test', 'sec1', key1=value)
+        Config.register_config('test', 'sec1', key1=value)
         conf = ConfigClient('sec1')
         conf('key1').should.equal({1: MyClass('foo'), 2: MyClass('boo')})
         conf('key1').should_not.equal({1: MyClass('afoo'), 2: MyClass('boo')})
 
     def dict_escape(self):
-        Configurations.clear()
+        Config.clear()
         value = DictConfigOption('a\:b:foo\:moo,a\,b:boo\,zoo')
-        Configurations.register_config('test', 'sec1', key1=value)
+        Config.register_config('test', 'sec1', key1=value)
         conf = ConfigClient('sec1')
         conf('key1').should.equal({'a:b': 'foo:moo', 'a,b': 'boo,zoo'})
 
     def autoload(self):
+        Config.allow_files = True
         sys.path.insert(0, fixture_path('config'))
         Config.setup('mod1', 'mod3')
         Config['sec1'].key1.should.equal('success')
