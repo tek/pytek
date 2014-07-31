@@ -1,6 +1,5 @@
-
 from os import environ
 
-__all__ = ['dodebug']
+dodebug = 'PYTHONDEBUG' in environ
 
-dodebug = "PYTHONDEBUG" in environ
+__all__ = ['dodebug']
