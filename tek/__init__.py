@@ -3,7 +3,8 @@ from .log import logger, debug
 from .process import process, process_output
 from .errors import MooException, TException
 from .user_input import YesNo
-from .config import Configurations, ConfigClient, lazy_configurable, Config
+from .config import (Configurations, ConfigClient, lazy_configurable, Config,
+                     configurable)
 from tek.run import cli
 
 try:
@@ -13,4 +14,5 @@ except ImportError:
 
 __all__ = ['cli', 'Spec', 'Configurations', 'ConfigClient',
            'lazy_configurable', 'Config', 'YesNo', 'MooException', 'process',
-           'process_output', 'debug', 'logger', 'dodebug', 'TException']
+           'process_output', 'debug', 'logger', 'dodebug', 'TException',
+           'configurable']
