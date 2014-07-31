@@ -53,4 +53,5 @@ class lazy_class_property(_LazyPropDecorator):
         setattr(owner, self.name, value)
         return value
 
-__all__ = ['generated_list', 'generated_sum', 'lazy_property']
+__all__ = ['generated_list', 'generated_sum', 'lazy_property',
+           'lazy_class_property']
