@@ -227,7 +227,7 @@ class ConfigurationFactory(object):
 
     def __init__(self, allow_files=True):
         self.files = []
-        self.config_parser = configparser.SafeConfigParser()
+        self.config_parser = configparser.ConfigParser()
         self._allow_files = allow_files
 
     def add_files(self, files):
