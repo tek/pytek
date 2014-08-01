@@ -291,7 +291,7 @@ class LoopingInput(object):
             value = super(LoopingInput, self).read()
             if value == self._terminate:
                     break
-            elif value in self._dispatch:
+            elif isinstance(value, str) and value in self._dispatch:
                 self._dispatch[value]()
             self.process()
             if self._force_terminate:
@@ -313,11 +313,13 @@ class LoopingInput(object):
 
 
 class CheckboxList(LoopingInput, SpecifiedChoice):
-    def __init__(self, elements, initial=None, colors=None, **kw):
+    def __init__(self, elements, initial=None, colors=None, simple=[], **kw):
         self._lines = list(map(str, elements))
         LoopingInput.__init__(self, **kw)
-        SpecifiedChoice.__init__(self, self._lines, simple=['q'],
-                                 newline=False, enter='q', **kw)
+        simple = list(set(['q', 'a'] + simple))
+        kw.setdefault('enter', 'q')
+        SpecifiedChoice.__init__(self, self._lines, simple=simple,
+                                 newline=False, **kw)
         self._states = initial or [0] * len(elements)
         t = terminal
         self._colors = colors or [t.white + t.bg_red, t.black + t.bg_green]
@@ -333,13 +335,21 @@ class CheckboxList(LoopingInput, SpecifiedChoice):
 
     def process(self):
         if self._input.isdigit():
-            index = int(self._input) - 1
-            self._states[index] += 1
-            self._states[index] %= len(self._colors)
+            self._toggle(int(self._input) - 1)
+        elif self._input == 'a':
+            self._toggle_all()
 
     @property
     def loop_value(self):
         return self._states
+
+    def _toggle(self, index):
+        self._states[index] += 1
+        self._states[index] %= len(self._colors)
+
+    def _toggle_all(self):
+        for index in range(len(self._states)):
+            self._toggle(index)
 
 
 def confirm(message, remove_text=False):
