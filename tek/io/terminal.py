@@ -140,6 +140,7 @@ end = 'EOL'
 
 
 class Terminal(object):
+
     class InputReader(object):
         _directions = [None, right, left]
         _move_keys = {
@@ -366,8 +367,8 @@ class Terminal(object):
 
     def input(self, single=False, initial=None):
         reader = Terminal.InputReader(self, single=single, initial=initial)
-        with reader as input:
-            return input.read()
+        with reader as _input:
+            return _input.read()
 
     def push(self, data='', **kw):
         old = self._lines
