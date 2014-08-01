@@ -638,7 +638,8 @@ def standard_config_files(alias):
 
 def reset_config():
     Configurations.register_files('tek', *standard_config_files('tek'))
-    Configurations.register_config('tek', 'general', debug=False)
+    Configurations.register_config('tek', 'general', debug=False,
+                                   verbose=False)
 
 from tek.config.options import (ListConfigOption, UnicodeConfigOption,
                                 PathConfigOption, PathListConfigOption,
