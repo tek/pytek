@@ -318,8 +318,9 @@ class CheckboxList(LoopingInput, SpecifiedChoice):
         LoopingInput.__init__(self, **kw)
         simple = list(set(['q', 'a'] + simple))
         kw.setdefault('enter', 'q')
+        kw.setdefault('newline', False)
         SpecifiedChoice.__init__(self, self._lines, simple=simple,
-                                 newline=False, **kw)
+                                 **kw)
         self._states = initial or [0] * len(elements)
         t = terminal
         self._colors = colors or [t.white + t.bg_red, t.black + t.bg_green]
