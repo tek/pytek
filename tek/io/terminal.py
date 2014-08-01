@@ -123,10 +123,12 @@ class TerminalController(object):
     @multimethod(str)
     def write(self, stuff):
         sys.stdout.write(stuff)
+        self.flush()
 
     @multimethod(bytes)
     def write(self, stuff):
         sys.stdout.buffer.write(stuff)
+        self.flush()
 
     def flush(self):
         sys.stdout.flush()
