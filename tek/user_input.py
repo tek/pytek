@@ -1,15 +1,15 @@
-
 import time
 import copy
-import itertools
 from re import compile as regex
 
 from tek.tools import decode
 from tek.errors import InternalError, InvalidInput, MooException
 from tek.io.terminal import terminal, ColorString
 
+
 class UserInputTerminated(MooException):
     pass
+
 
 class InputQueue(list):
     delay = None
@@ -30,10 +30,12 @@ class InputQueue(list):
 
 input_queue = InputQueue()
 
+
 def is_digit(arg):
     return isinstance(arg, int) or (isinstance(arg, str) and
                                     arg.isdigit())
-    
+
+
 class UserInput(object):
     def __init__(self, text, validator=None, validate=True, newline=True,
                  single=False, remove_text=False, initial_input=None, **kw):
@@ -92,7 +94,8 @@ class UserInput(object):
     def _read(self, prompt):
         terminal.push(prompt)
         terminal.write(' ')
-        input = terminal.input(single=self._single, initial=self._initial_input)
+        input = terminal.input(single=self._single,
+                               initial=self._initial_input)
         valid = self._do_input(input)
         if not valid:
             terminal.pop()
@@ -121,6 +124,7 @@ class UserInput(object):
     def fail_prompt(self):
         return ['Invalid input. Try again:']
 
+
 class SimpleChoice(UserInput):
     def __init__(self, elements, text=[''], additional=[], *a, **kw):
         self.text = text
@@ -130,7 +134,7 @@ class SimpleChoice(UserInput):
 
     def _setup_validator(self):
         self._validator = regex(r'^(%s)$' % '|'.join(self._elements +
-                                               self._additional))
+                                                     self._additional))
 
     @property
     def prompt(self):
@@ -157,6 +161,7 @@ class SimpleChoice(UserInput):
         self._elements.append(str(e))
         self._setup_validator()
 
+
 class SingleCharSimpleChoice(SimpleChoice):
     """ Restrict input to single characters, allowing omission of
     newline for input. Fallback to conventional SimpleChoice if choices
@@ -170,11 +175,13 @@ class SingleCharSimpleChoice(SimpleChoice):
         single = (all(len(str(e)) <= 1 for e in elements + additional) and
                   validate)
         SimpleChoice.__init__(self, elements, additional=additional,
-                              single=single, validate=validate, *args, **kwargs)
+                              single=single, validate=validate, *args,
+                              **kwargs)
 
-    def _do_input(self, input):
-        return SimpleChoice._do_input(self, self._enter if self._enter and input
-                                      == '' else input)
+    def _do_input(self, _input):
+        return SimpleChoice._do_input(self, self._enter if self._enter and
+                                      _input == '' else _input)
+
 
 class YesNo(SingleCharSimpleChoice):
     def __init__(self, text=['Confirm'], *args, **kwargs):
@@ -186,6 +193,7 @@ class YesNo(SingleCharSimpleChoice):
 
     def __bool__(self):
         return bool(self.value)
+
 
 class SpecifiedChoice(SingleCharSimpleChoice):
     """ Automatically supply enumeration for the strings available for
@@ -212,7 +220,8 @@ class SpecifiedChoice(SingleCharSimpleChoice):
 
     def _format_choice(self, n, choice, info):
         pad = ' ' * (len(str(self._numbers[-1])) - len(str(n)))
-        return [' {}[{}] {}'.format(pad, n, choice)] + [' ' * 5 + i for i in info]
+        return [' {}[{}] {}'.format(pad, n, choice)] + [' ' * 5 + i for i in
+                                                        info]
 
     @property
     def prompt(self):
@@ -266,6 +275,7 @@ class SpecifiedChoice(SingleCharSimpleChoice):
     def _effective_values(self):
         return self._values or self._choices
 
+
 class LoopingInput(object):
     def __init__(self, terminate='q', overwrite=True, dispatch=[],
                  raise_quit=False, **kw):
@@ -301,12 +311,13 @@ class LoopingInput(object):
     def loop_value(self):
         return None
 
+
 class CheckboxList(LoopingInput, SpecifiedChoice):
     def __init__(self, elements, initial=None, colors=None, **kw):
         self._lines = list(map(str, elements))
         LoopingInput.__init__(self, **kw)
-        SpecifiedChoice.__init__(self, self._lines, simple=['q'], newline=False,
-                                 enter='q', **kw)
+        SpecifiedChoice.__init__(self, self._lines, simple=['q'],
+                                 newline=False, enter='q', **kw)
         self._states = initial or [0] * len(elements)
         t = terminal
         self._colors = colors or [t.white + t.bg_red, t.black + t.bg_green]
@@ -329,6 +340,7 @@ class CheckboxList(LoopingInput, SpecifiedChoice):
     @property
     def loop_value(self):
         return self._states
+
 
 def confirm(message, remove_text=False):
     message = [str(message)] + ['Press return to continue.']
