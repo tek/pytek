@@ -277,6 +277,7 @@ def copy_progress(source, dest):
 
 
 def sizeof_fmt(num, prec=1, bi=True):
+    num = float(num)
     div = 1024. if bi else 1000.
     fmt = '{{:3.{}f}} {{}}'.format(prec)
     for x in ['B', 'KB', 'MB', 'GB', 'TB']:
