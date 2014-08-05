@@ -1,4 +1,3 @@
-
 import sys
 import collections
 import os
@@ -298,7 +297,9 @@ def resolve_redirect(url):
     except ImportError:
         return url
     else:
-        return requests.get(url, stream=True).url
+        req = requests.get(url, stream=True)
+        req.connection.close()
+        return req.url
 
 
 def lists_uniq(lists):
