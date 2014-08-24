@@ -11,7 +11,7 @@ from tek.config.write import write_pkg_config
 
 class Config_(Spec):
 
-    def lazy_configurable(self):
+    def configurable(self):
         Config.clear()
         Config.register_config('test', 'sec1', key1='val1',
                                        key2=ListConfigOption(['asdf', 'jkl;']))
