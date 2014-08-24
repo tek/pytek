@@ -253,8 +253,8 @@ class SpecifiedChoice(SingleCharSimpleChoice):
     @property
     def raw_value(self):
         i = SingleCharSimpleChoice.value.fget(self)
-        if i in self._simple or self._is_choice_index(i) or not \
-           self._do_validate:
+        if (i in self._simple or self._is_choice_index(i) or not
+                self._do_validate):
             return i
         else:
             raise InternalError('SpecifiedChoice: strange input: ' +
