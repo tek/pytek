@@ -386,3 +386,10 @@ def unix_to_datetime(stamp):
 
 def datetime_to_unix(_date):
     return calendar.timegm(_date.utctimetuple())
+
+
+def wait_for(pred, timeout=5, poll=1):
+    start = datetime.datetime.now()
+    while (not pred() and
+            (datetime.datetime.now() - start).total_seconds() < timeout):
+        time.sleep(poll)
