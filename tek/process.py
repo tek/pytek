@@ -1,16 +1,15 @@
 from subprocess import Popen, PIPE, getoutput
 
 
-def process(args, wait=True, pipe=True):
+def process(args, wait=True, pipe=True, timeout=None, **kwargs):
     ''' Run process 'args' and return the Popen instance after it's
         finished.
     '''
-    kwargs = {}
     if pipe:
         kwargs.update(stdout=PIPE, stderr=PIPE)
     proc = Popen(args, **kwargs)
     if wait:
-        proc.wait()
+        proc.wait(timeout)
     return proc
 
 
