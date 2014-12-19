@@ -393,3 +393,8 @@ def wait_for(pred, timeout=5, poll=1):
     while (not pred() and
             (datetime.datetime.now() - start).total_seconds() < timeout):
         time.sleep(poll)
+
+
+def is_int(value):
+    return (isinstance(value, int) or isinstance(value, str) and
+            value.isnumeric())
