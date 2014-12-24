@@ -110,14 +110,16 @@ class BoolConfigOption(TypedConfigOption):
     be parsed from strings differently.
     """
 
-    def __init__(self, defaultvalue=False, no=None, **params):
+    def __init__(self, defaultvalue=False, no=None, no_switch=None, **params):
         """ Set the value_type to bool. """
         TypedConfigOption.__init__(self, bool, defaultvalue, **params)
         self.no = no
+        self.no_switch = no_switch
 
     def set_from_co(self, other):
         if other.no is not None:
             self.no = other.no
+            self.no_switch = other.no_switch
         TypedConfigOption.set_from_co(self, other)
 
     def set(self, arg):

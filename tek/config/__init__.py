@@ -436,6 +436,8 @@ class Configurations(object, metaclass=ConfigSubscript):
                     add()
                     params = {'default': None}
                     arg = ['--no-%s' % switchname]
+                    if value.no_switch is not None:
+                        arg.append(value.no_switch)
                     params['action'] = 'store_false'
                     params['dest'] = name
             add()
