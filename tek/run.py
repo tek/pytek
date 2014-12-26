@@ -3,9 +3,11 @@ import sys
 import threading
 import functools
 import inspect
+import importlib
 
 from tek import dodebug, logger, Config
 from tek.errors import TException
+from tek.config.errors import ConfigLoadError
 
 
 class Singleton(type):
@@ -56,7 +58,7 @@ def main(func, handle_sigint=True, *a, **kw):
     try:
         if handle_sigint:
             SignalManager.instance.sigint()
-        func(*a, **kw)
+        return func(*a, **kw)
     except TException as e:
         logger.error(e)
     except Exception as e:
@@ -67,10 +69,26 @@ def main(func, handle_sigint=True, *a, **kw):
 moo_run = main
 
 
+def _valid_parent_module(module):
+    parent = module
+    while parent:
+        try:
+            importlib.import_module('{}.config'.format(parent))
+        except ImportError:
+            parts = parent.rsplit('.', 1)
+            if len(parts) == 1:
+                msg = 'No parent module with config found for entry point {}'
+                raise ConfigLoadError(msg.format(module))
+            else:
+                parent = parts[0]
+        else:
+            return parent
+
+
 def _load_entry_point_config(module, config_alias=None, parse_cli=True,
                              positional=()):
     if config_alias is None:
-        config_alias = module
+        config_alias = _valid_parent_module(module)
     Config.setup(config_alias)
     if parse_cli:
         Config.parse_cli(positional=positional)
