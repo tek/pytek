@@ -100,6 +100,9 @@ class Configuration(object):
     def __str__(self):
         return str(self.config)
 
+    def __repr__(self):
+        return repr(self.config)
+
     def has_key(self, key):
         ''' Emulate read-only container behaviour. '''
         return key in self.config
@@ -263,7 +266,10 @@ class ConfigProxy(object):
         return self._config[key]
 
 
-class ConfigSubscript(type):
+class ConfigMeta(type):
+
+    def __str__(self):
+        return str(self._configs)
 
     def __getitem__(self, section):
         if section not in self._configs:
@@ -271,7 +277,7 @@ class ConfigSubscript(type):
         return ConfigProxy(self._configs[section])
 
 
-class Configurations(object, metaclass=ConfigSubscript):
+class Configurations(object, metaclass=ConfigMeta):
     ''' Program-wide register of Configuration instances.
     Connects the clients to the according Configuration, as soon as it
     has registered.
