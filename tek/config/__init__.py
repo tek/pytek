@@ -259,6 +259,9 @@ class ConfigProxy(object):
     def __init__(self, config):
         self._config = config
 
+    def __str__(self):
+        return str(self._config)
+
     def __getattr__(self, key):
         return self[key]
 
