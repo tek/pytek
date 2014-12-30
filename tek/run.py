@@ -112,7 +112,7 @@ def cli(load_config=True, **conf_kw):
         def wrapper(*a, **kw):
             if load_config:
                 _load_entry_point_config(module, **conf_kw)
-            return main(func, *a, **kw)
+            main(func, *a, **kw)
         return wrapper
     if hasattr(load_config, '__call__'):
         func = load_config

@@ -78,6 +78,8 @@ class Config_(Spec):
 
     def cli(self):
         from tests._fixtures.config.mod1.sub.cli import cli_test
-        cli_test().should.equal('val1')
+        data = []
+        cli_test(data=data)
+        data[-1].should.equal('val1')
 
 __all__ = []
