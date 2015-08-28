@@ -69,11 +69,13 @@ class Spec(spec.Spec):
 
     def __init__(self, configs=['tek'], *a, **kw):
         self._configs = configs
+        self._warnings = True
 
     def setup(self, *a, allow_files=False, **kw):
         if __base_dir__:
             shutil.rmtree(temp_path(), ignore_errors=True)
-        warnings.resetwarnings()
+        if self._warnings:
+            warnings.resetwarnings()
         Config.allow_files = allow_files
         Config.setup(*self._configs, files=allow_files)
         Config.override('general', debug=True)
