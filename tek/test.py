@@ -3,6 +3,7 @@ import shutil
 import warnings
 from datetime import datetime
 import time
+from pathlib import Path
 
 import spec
 
@@ -19,14 +20,16 @@ class TestEnvError(Error):
     pass
 
 
-def setup(_path):
+def setup(path):
     ''' Use the supplied path to initialise the tests base dir.
     If _path is a file, its dirname is used.
     '''
-    if not os.path.isdir(_path):
-        _path = os.path.dirname(_path)
+    if not isinstance(path, Path):
+        path = Path(path)
+    if not path.is_dir():
+        path = path.parent
     global __base_dir__
-    __base_dir__ = _path
+    __base_dir__ = path
 
 
 def _check():
@@ -35,33 +38,34 @@ def _check():
         raise TestEnvError(msg)
 
 
-def create_temp_file(*components):
-    _file = temp_file(*components)
-    return touch(_file)
-
-
-def temp_file(*components):
-    return os.path.join(temp_dir(*components[:-1]), *components[-1:])
-
-
 def temp_path(*components):
     _check()
-    return os.path.join(__base_dir__, '_temp', *components)
+    return Path(__base_dir__, '_temp', *components)
 
 
 def temp_dir(*components):
     _dir = temp_path(*components)
-    os.makedirs(_dir, exist_ok=True)
+    _dir.mkdir(exist_ok=True, parents=True)
     return _dir
+
+
+def temp_file(*components):
+    return temp_dir(*components[:-1]).joinpath(*components[-1:])
+
+
+def create_temp_file(*components):
+    _file = temp_file(*components)
+    _file.touch()
+    return _file
 
 
 def fixture_path(*components):
     _check()
-    return os.path.join(__base_dir__, '_fixtures', *components)
+    return Path(__base_dir__, '_fixtures', *components)
 
 
 def load_fixture(*components):
-    with open(fixture_path(*components), 'r') as f:
+    with fixture_path(*components).open() as f:
         return f.read()
 
 
@@ -73,7 +77,7 @@ class Spec(spec.Spec):
 
     def setup(self, *a, allow_files=False, **kw):
         if __base_dir__:
-            shutil.rmtree(temp_path(), ignore_errors=True)
+            shutil.rmtree(str(temp_path()), ignore_errors=True)
         if self._warnings:
             warnings.resetwarnings()
         Config.allow_files = allow_files
