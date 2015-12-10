@@ -1,4 +1,3 @@
-
 import logging
 import os
 import sys
@@ -23,13 +22,12 @@ if 'TEK_PYTHON_FILE_LOGGING' in os.environ:
         pass
 
 if dodebug and 'TEK_PYTHON_DEBUG_LOGGING' in os.environ:
-    debug_logger = logging.getLogger('tek-debug')
+    debug_logger = logger.getChild('debug')
     debug_logger.setLevel(logging.DEBUG)
     try:
         handler = logging.FileHandler(os.path.expanduser('~/.python/debug'))
         debug_logger.addHandler(handler)
         handler.setLevel(logging.DEBUG)
-        debug_logger.debug('========= START =========')
     except IOError:
         pass
     debug = debug_logger.debug
