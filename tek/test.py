@@ -69,6 +69,18 @@ def load_fixture(*components):
         return f.read()
 
 
+def later(ass, timeout=5, intval=0.1):
+    start = datetime.now()
+    ok = False
+    while not ok and (datetime.now() - start).total_seconds() < timeout:
+        try:
+            ass()
+            ok = True
+        except AssertionError:
+            time.sleep(intval)
+    return ass()
+
+
 class Spec(spec.Spec):
 
     def __init__(self, configs=['tek'], *a, **kw):
