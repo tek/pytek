@@ -99,11 +99,11 @@ class Spec(spec.Spec):
     def teardown(self, *a, **kw):
         warnings.simplefilter('ignore')
 
-    def _wait_for(self, pred, timeout=5):
+    def _wait_for(self, pred, timeout=5, intval=0.1):
         start = datetime.now()
         while (not pred() and
                (datetime.now() - start).total_seconds() < timeout):
-            time.sleep(1)
+            time.sleep(intval)
         pred().should.be.ok
 
 
