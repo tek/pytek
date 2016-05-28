@@ -1,7 +1,10 @@
 from setuptools import setup, find_packages
 
+version_parts = (3, 0, 0)
+version = '.'.join(map(str, version_parts))
+
 setup(name='tek',
-      version='2.1.0',
+      version=version,
       author='Torsten Schmits',
       author_email='torstenschmits@gmail.com',
       license='MIT',
