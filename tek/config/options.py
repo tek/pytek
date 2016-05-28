@@ -1,6 +1,8 @@
 import os
 import glob
 import re
+from os.path import expandvars
+from pathlib import Path
 
 from tek import logger
 from tek.tools import join_lists
@@ -164,7 +166,7 @@ class PathListConfigOption(ListConfigOption):
     def set(self, value):
         super(PathListConfigOption, self).set(value)
         globbed = list(map(glob.glob, [v.value for v in self.value]))
-        self.value = join_lists(globbed)
+        self.value = [Path(a) for a in join_lists(globbed)]
 
     @property
     def effective_value(self):
@@ -177,14 +179,13 @@ class UnicodeConfigOption(TypedConfigOption):
         TypedConfigOption.__init__(self, str, default, **params)
 
 
-class PathConfigOption(UnicodeConfigOption):
+class PathConfigOption(TypedConfigOption):
 
     def __init__(self, path=None, **params):
-        super(PathConfigOption, self).__init__(path or '', **params)
+        super().__init__(Path, path or Path.cwd(), **params)
 
     def set(self, path):
-        p = os.path
-        self.value = p.abspath(p.expandvars(p.expanduser(path)))
+        self.value = Path(expandvars(str(path))).absolute().expanduser()
 
 
 class NumericalConfigOption(TypedConfigOption):
