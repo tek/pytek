@@ -1,4 +1,3 @@
-import os
 import glob
 import re
 from os.path import expandvars
@@ -185,7 +184,7 @@ class PathConfigOption(TypedConfigOption):
         super().__init__(Path, path or Path.cwd(), **params)
 
     def set(self, path):
-        self.value = Path(expandvars(str(path))).absolute().expanduser()
+        self.value = Path(expandvars(str(path))).expanduser().absolute()
 
 
 class NumericalConfigOption(TypedConfigOption):
