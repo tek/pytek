@@ -1,11 +1,12 @@
-import glob
 import re
 from os.path import expandvars
 from pathlib import Path
+from typing import Iterable
 
 from tek import logger
-from tek.tools import join_lists
-from tek.config.errors import ValueError as CValueError
+from tek.config.errors import ConfigValueError, ConfigTypeError
+
+from tryp import List, _
 
 
 def boolify(value):
@@ -91,7 +92,7 @@ class TypedConfigOption(ConfigOption):
             else:
                 self.value = self.value_type(args)
         except ValueError:
-            raise CValueError(self.__class__, args)
+            raise ConfigValueError(self.__class__, args)
 
     def __str__(self):
         return str(self.value)
@@ -136,14 +137,16 @@ class ListConfigOption(TypedConfigOption):
             defaultvalue = []
         self._splitchar = splitchar
         self._element_type = element_type
-        TypedConfigOption.__init__(self, list, defaultvalue, **params)
+        super().__init__(List, defaultvalue, factory=List.wrap, **params)
 
     def set(self, value):
         if isinstance(value, str):
             value = value.split(self._splitchar)
+        elif not isinstance(value, Iterable):
+            raise ConfigTypeError(list, value)
+        super().set(value)
         if self._element_type is not None:
-            value = list(map(self._element_type, value))
-        self.value = value
+            self.value = self.value / self._element_type
 
     @property
     def effective_value(self):
@@ -160,12 +163,12 @@ class PathListConfigOption(ListConfigOption):
 
     def __init__(self, *a, **kw):
         t = PathConfigOption
-        super(PathListConfigOption, self).__init__(*a, element_type=t, **kw)
+        super().__init__(*a, element_type=t, **kw)
 
     def set(self, value):
-        super(PathListConfigOption, self).set(value)
-        globbed = list(map(glob.glob, [v.value for v in self.value]))
-        self.value = [Path(a) for a in join_lists(globbed)]
+        super().set(value)
+        glob = lambda a: a.parent.glob(a.name)
+        self.value = self.value / _.value // glob
 
     @property
     def effective_value(self):

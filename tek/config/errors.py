@@ -61,11 +61,18 @@ class ConfigClientNotYetConnectedError(ConfigError):
         super(ConfigClientNotYetConnectedError, self).__init__(error_string)
 
 
-class ValueError(ConfigError):
+class ConfigValueError(ConfigError):
+
+    def __init__(self, option, value):
+        message = '''Invalid value '{}' for config option '{}'!'''
+        super().__init__(message.format(value, option))
+
+
+class ConfigTypeError(ConfigError):
 
     def __init__(self, typ, value):
-        message = 'Invalid value \'{}\' for \'{}\'!'
-        super(ValueError, self).__init__(message.format(typ, value))
+        message = 'Invalid type \'{}\' for \'{}\' (expected \'{}\')!'
+        super().__init__(message.format(type(value), value, typ))
 
 
 class ConfigLoadError(ConfigError):
