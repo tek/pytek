@@ -1,14 +1,18 @@
 from setuptools import setup, find_packages
 
-version_parts = (3, 1, 0)
+version_parts = (3, 1, 1)
 version = '.'.join(map(str, version_parts))
 
-setup(name='tek',
-      version=version,
-      author='Torsten Schmits',
-      author_email='torstenschmits@gmail.com',
-      license='MIT',
-      long_description='helper lib',
-      packages=find_packages(exclude=['tests', 'tests.*']),
-      install_requires=['crystalmethod'],
-      )
+setup(
+    name='tek',
+    version=version,
+    author='Torsten Schmits',
+    author_email='torstenschmits@gmail.com',
+    license='MIT',
+    long_description='helper lib',
+    packages=find_packages(exclude=['tests', 'tests.*']),
+    install_requires=[
+        'crystalmethod',
+        'tryp>=7.5.0'
+    ],
+)
