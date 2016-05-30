@@ -14,6 +14,8 @@ from functools import wraps
 from tek.log import stdouthandler, logger
 from tek.io.terminal import terminal
 
+from tryp import log
+
 
 def zip_fill(default, *seqs):
     # TODO itertools.zip_longest
@@ -263,8 +265,8 @@ def copy_progress(source, dest):
         progress.stop()
         signal(signal.SIGINT, old_handler)
         msg = 'Interrupted by signal {}.'.format(signum)
-        print()
-        print(msg)
+        log.warn()
+        log.warn(msg)
 
     signal.signal(signal.SIGINT, interrupt)
     terminal.lock()
