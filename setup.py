@@ -1,6 +1,6 @@
 from setuptools import setup, find_packages
 
-version_parts = (3, 1, 1)
+version_parts = (3, 2, 0)
 version = '.'.join(map(str, version_parts))
 
 setup(
@@ -13,6 +13,6 @@ setup(
     packages=find_packages(exclude=['tests', 'tests.*']),
     install_requires=[
         'crystalmethod',
-        'tryp>=7.5.0'
+        'tryp>=7.6.0'
     ],
 )
