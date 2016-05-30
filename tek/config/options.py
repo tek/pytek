@@ -6,7 +6,7 @@ from typing import Iterable
 from tek import logger
 from tek.config.errors import ConfigValueError, ConfigTypeError
 
-from tryp import List, _
+from tryp import List, _, Boolean
 
 
 def boolify(value):
@@ -113,8 +113,7 @@ class BoolConfigOption(TypedConfigOption):
     """
 
     def __init__(self, defaultvalue=False, no=None, no_switch=None, **params):
-        """ Set the value_type to bool. """
-        TypedConfigOption.__init__(self, bool, defaultvalue, **params)
+        TypedConfigOption.__init__(self, Boolean, defaultvalue, **params)
         self.no = no
         self.no_switch = no_switch
 
@@ -125,7 +124,6 @@ class BoolConfigOption(TypedConfigOption):
         TypedConfigOption.set_from_co(self, other)
 
     def set(self, arg):
-        """ Transform arg into a bool value and pass it to super. """
         super(BoolConfigOption, self).set(boolify(arg))
 
 
