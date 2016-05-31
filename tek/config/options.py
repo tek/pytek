@@ -166,7 +166,7 @@ class PathListConfigOption(ListConfigOption):
     def set(self, value):
         super().set(value)
         glob = lambda a: a.parent.glob(a.name)
-        self.value = self.value / _.value // glob
+        self.value = List.wrap(self.value) / _.value // glob
 
     @property
     def effective_value(self):
