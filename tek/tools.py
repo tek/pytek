@@ -14,7 +14,7 @@ from functools import wraps
 from tek.log import stdouthandler, logger
 from tek.io.terminal import terminal
 
-from tryp import log
+from tryp.logging import log
 
 
 def zip_fill(default, *seqs):
