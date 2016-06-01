@@ -4,10 +4,13 @@ import threading
 import functools
 import inspect
 import importlib
+import logging
 
-from tek import dodebug, logger, Config
+from tek import dodebug, logger, Config, dodebug
 from tek.errors import TException
 from tek.config.errors import ConfigLoadError
+
+from tryp.logging import tryp_stdout_logging
 
 
 class Singleton(type):
@@ -20,7 +23,7 @@ class Singleton(type):
 
 
 class SignalManager(metaclass=Singleton):
-    _instance = None
+    _instance = None  # type: ignore
 
     def __init__(self):
         if SignalManager._instance is not None:
@@ -92,6 +95,14 @@ def _load_entry_point_config(module, config_alias=None, parse_cli=True,
     Config.setup(config_alias)
     if parse_cli:
         Config.parse_cli(positional=positional)
+        conf = Config['general']
+        if conf['stdout']:
+            level = (logging.DEBUG if conf['debug'] else
+                     logging.VERBOSE if conf['verbose'] else None)
+            tryp_stdout_logging(level)
+            if conf['debug']:
+                global dodebug
+                dodebug = True
 
 
 def cli(load_config=True, **conf_kw):
